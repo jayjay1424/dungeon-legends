@@ -1,0 +1,789 @@
+▲ Next.js 16.3.4 (Turbopack)
+- Local:         http://localhost:3001
+- Network:       http://192.168.0.206:3001
+- Environments: .env
+✓ Ready in 3.0s
+✓ Running next.config.ts took 343ms
+
+ GET / 307 in 6.5s (next.js: 4.0s, application-code: 2.5s)
+ GET /login 200 in 1773ms (next.js: 342ms, application-code: 1432ms)
+ GET /login 200 in 437ms (next.js: 262ms, application-code: 175ms)
+ GET /login 200 in 142ms (next.js: 21ms, application-code: 121ms)
+ GET / 307 in 2.6s (next.js: 2.0s, application-code: 571ms)
+ GET /login 200 in 446ms (next.js: 185ms, application-code: 261ms)
+ GET /login 200 in 405ms (next.js: 79ms, application-code: 326ms)
+○ Compiling /forgot-password ...
+ GET /forgot-password 200 in 7.2s (next.js: 6.4s, application-code: 799ms)
+ GET /forgot-password 200 in 630ms (next.js: 100ms, application-code: 531ms)
+ GET /forgot-password 200 in 390ms (next.js: 74ms, application-code: 316ms)
+ GET /forgot-password 200 in 349ms (next.js: 127ms, application-code: 222ms)
+ GET /forgot-password 200 in 202ms (next.js: 88ms, application-code: 114ms)
+ GET /forgot-password 200 in 683ms (next.js: 440ms, application-code: 243ms)
+✓ Compiled in 3.1s
+ GET /forgot-password 200 in 263ms (next.js: 133ms, application-code: 129ms)
+✓ Compiled in 1581ms
+ GET /forgot-password 200 in 290ms (next.js: 110ms, application-code: 181ms)
+ GET /forgot-password 200 in 573ms (next.js: 156ms, application-code: 417ms)
+✓ Compiled in 1780ms
+✓ Compiled in 1291ms
+✓ Compiled in 548ms
+ GET /login 200 in 1445ms (next.js: 435ms, application-code: 1010ms)
+ GET /register 200 in 503ms (next.js: 273ms, application-code: 230ms)
+ GET /forgot-password 200 in 260ms (next.js: 54ms, application-code: 206ms)
+○ Compiling /reset-password ...
+ GET /reset-password 200 in 5.5s (next.js: 5.2s, application-code: 291ms)
+ GET /login 200 in 194ms (next.js: 42ms, application-code: 151ms)
+ GET /hunt 200 in 285ms (next.js: 117ms, application-code: 168ms)
+ GET /test-db 200 in 5.5s (next.js: 2.4s, application-code: 3.1s)
+ GET /forgot-password 200 in 576ms (next.js: 259ms, application-code: 317ms)
+ GET /login 200 in 203ms (next.js: 68ms, application-code: 135ms)
+ GET /register 200 in 202ms (next.js: 90ms, application-code: 112ms)
+ GET /forgot-password 200 in 142ms (next.js: 19ms, application-code: 123ms)
+ GET /reset-password 200 in 201ms (next.js: 72ms, application-code: 129ms)
+ GET /login 200 in 136ms (next.js: 20ms, application-code: 116ms)
+ GET /hunt 200 in 264ms (next.js: 120ms, application-code: 145ms)
+ GET /login 200 in 188ms (next.js: 31ms, application-code: 158ms)
+ GET /survival 200 in 807ms (next.js: 271ms, application-code: 537ms)
+ GET /forgot-password 200 in 83ms (next.js: 18ms, application-code: 66ms)
+ GET /login 200 in 1367ms (next.js: 751ms, application-code: 616ms)
+ GET /register 200 in 474ms (next.js: 236ms, application-code: 238ms)
+ GET /login 200 in 225ms (next.js: 96ms, application-code: 129ms)
+ GET /login 200 in 758ms (next.js: 95ms, application-code: 663ms)
+ GET /dashboard 200 in 1659ms (next.js: 375ms, proxy.ts: 1192ms, application-code: 92ms)
+ GET /survival 200 in 280ms (next.js: 81ms, application-code: 199ms)
+ GET /survival 200 in 627ms (next.js: 219ms, application-code: 407ms)
+✓ Compiled in 1270ms
+ GET /survival 200 in 311ms (next.js: 157ms, application-code: 154ms)
+✓ Compiled in 930ms
+ GET /survival 200 in 360ms (next.js: 222ms, application-code: 138ms)
+✓ Compiled in 2.5s
+ GET /survival 200 in 634ms (next.js: 486ms, application-code: 148ms)
+ GET /survival 200 in 1042ms (next.js: 499ms, application-code: 543ms)
+ GET /survival 200 in 540ms (next.js: 111ms, application-code: 428ms)
+✓ Compiled in 2.1s
+ GET /survival 200 in 400ms (next.js: 188ms, application-code: 212ms)
+ GET /survival 200 in 782ms (next.js: 399ms, application-code: 383ms)
+✓ Compiled in 3.6s
+✓ Compiled in 1386ms
+✓ Compiled in 1406ms
+✓ Compiled in 1385ms
+✓ Compiled in 1643ms
+✓ Compiled in 3s
+✓ Compiled in 3.2s
+✓ Compiled in 3.3s
+✓ Compiled in 2.1s
+✓ Compiled in 1693ms
+✓ Compiled in 2s
+✓ Compiled in 2.7s
+✓ Compiled in 1153ms
+✓ Compiled in 697ms
+✓ Compiled in 269ms
+✓ Compiled in 320ms
+✓ Compiled in 235ms
+✓ Compiled in 1641ms
+✓ Compiled in 1456ms
+✓ Compiled in 2.3s
+✓ Compiled in 656ms
+✓ Compiled in 1382ms
+✓ Compiled in 511ms
+✓ Compiled in 482ms
+✓ Compiled in 306ms
+✓ Compiled in 330ms
+✓ Compiled in 293ms
+✓ Compiled in 3.9s
+ GET /survival 200 in 1015ms (next.js: 280ms, application-code: 735ms)
+✓ Compiled in 2.4s
+ GET /survival 200 in 602ms (next.js: 99ms, application-code: 503ms)
+✓ Compiled in 1337ms
+ GET /survival 200 in 157ms (next.js: 74ms, application-code: 83ms)
+✓ Compiled in 1318ms
+ GET /survival 200 in 155ms (next.js: 62ms, application-code: 93ms)
+✓ Compiled in 1402ms
+ GET /survival 200 in 182ms (next.js: 50ms, application-code: 132ms)
+✓ Compiled in 1480ms
+ GET /survival 200 in 269ms (next.js: 71ms, application-code: 197ms)
+✓ Compiled in 1370ms
+ GET /survival 200 in 171ms (next.js: 57ms, application-code: 114ms)
+✓ Compiled in 306ms
+ GET /survival 200 in 139ms (next.js: 50ms, application-code: 89ms)
+✓ Compiled in 365ms
+ GET /survival 200 in 139ms (next.js: 63ms, application-code: 76ms)
+ GET /survival 200 in 717ms (next.js: 292ms, application-code: 425ms)
+ GET /survival 200 in 202ms (next.js: 22ms, application-code: 180ms)
+ GET /survival 200 in 363ms (next.js: 29ms, application-code: 334ms)
+✓ Compiled in 3s
+ GET /survival 200 in 678ms (next.js: 403ms, application-code: 275ms)
+ GET /survival 200 in 156ms (next.js: 36ms, application-code: 120ms)
+✓ Compiled in 3.1s
+ GET /survival 200 in 1134ms (next.js: 597ms, application-code: 537ms)
+✓ Compiled in 3s
+ GET /survival 200 in 258ms (next.js: 71ms, application-code: 187ms)
+✓ Compiled in 1657ms
+ GET /survival 200 in 1690ms (next.js: 809ms, application-code: 881ms)
+✓ Compiled in 5.6s
+ GET /survival 200 in 939ms (next.js: 389ms, application-code: 550ms)
+✓ Compiled in 3.9s
+ GET /survival 200 in 779ms (next.js: 310ms, application-code: 469ms)
+ GET /survival 200 in 1271ms (next.js: 769ms, application-code: 502ms)
+✓ Compiled in 4.6s
+ GET /survival 200 in 1777ms (next.js: 1353ms, application-code: 425ms)
+✓ Compiled in 2s
+ GET /survival 200 in 371ms (next.js: 232ms, application-code: 139ms)
+✓ Compiled in 2.5s
+ GET /survival 200 in 434ms (next.js: 100ms, application-code: 334ms)
+✓ Compiled in 2.2s
+ GET /survival 200 in 227ms (next.js: 107ms, application-code: 120ms)
+✓ Compiled in 3.3s
+ GET /survival 200 in 701ms (next.js: 405ms, application-code: 296ms)
+✓ Compiled in 1741ms
+ GET /survival 200 in 201ms (next.js: 66ms, application-code: 135ms)
+✓ Compiled in 4.9s
+ GET /survival 200 in 392ms (next.js: 106ms, application-code: 286ms)
+ GET /survival 200 in 2.4s (next.js: 889ms, application-code: 1480ms)
+✓ Compiled in 3.1s
+ GET /survival 200 in 1158ms (next.js: 497ms, application-code: 661ms)
+✓ Compiled in 1554ms
+ GET /survival 200 in 179ms (next.js: 59ms, application-code: 120ms)
+✓ Compiled in 1685ms
+ GET /survival 200 in 200ms (next.js: 79ms, application-code: 121ms)
+✓ Compiled in 1363ms
+ GET /survival 200 in 230ms (next.js: 101ms, application-code: 129ms)
+ GET /survival 200 in 805ms (next.js: 448ms, application-code: 357ms)
+✓ Compiled in 3.2s
+ GET /survival 200 in 568ms (next.js: 234ms, application-code: 333ms)
+ GET /survival 200 in 1397ms (next.js: 582ms, application-code: 814ms)
+✓ Compiled in 2.9s
+ GET /survival 200 in 1175ms (next.js: 587ms, application-code: 589ms)
+✓ Compiled in 1027ms
+ GET /survival 200 in 454ms (next.js: 120ms, application-code: 334ms)
+✓ Compiled in 1860ms
+ GET /survival 200 in 384ms (next.js: 75ms, application-code: 308ms)
+✓ Compiled in 2.5s
+ GET /survival 200 in 201ms (next.js: 60ms, application-code: 141ms)
+✓ Compiled in 1030ms
+ GET /survival 200 in 225ms (next.js: 96ms, application-code: 129ms)
+✓ Compiled in 624ms
+ GET /survival 200 in 197ms (next.js: 86ms, application-code: 111ms)
+✓ Compiled in 517ms
+ GET /survival 200 in 150ms (next.js: 48ms, application-code: 102ms)
+✓ Compiled in 879ms
+ GET /survival 200 in 329ms (next.js: 180ms, application-code: 149ms)
+✓ Compiled in 1378ms
+ GET /survival 200 in 821ms (next.js: 240ms, application-code: 580ms)
+✓ Compiled in 1564ms
+ GET /survival 200 in 228ms (next.js: 77ms, application-code: 152ms)
+✓ Compiled in 1122ms
+ GET /survival 200 in 210ms (next.js: 61ms, application-code: 149ms)
+✓ Compiled in 624ms
+ GET /survival 200 in 223ms (next.js: 75ms, application-code: 148ms)
+✓ Compiled in 594ms
+ GET /survival 200 in 172ms (next.js: 53ms, application-code: 119ms)
+✓ Compiled in 1759ms
+ GET /survival 200 in 168ms (next.js: 63ms, application-code: 106ms)
+✓ Compiled in 1608ms
+ GET /survival 200 in 777ms (next.js: 261ms, application-code: 517ms)
+ GET /survival 200 in 2.1s (next.js: 1061ms, application-code: 1059ms)
+✓ Compiled in 3.2s
+ GET /survival 200 in 866ms (next.js: 462ms, application-code: 404ms)
+✓ Compiled in 1584ms
+ GET /survival 200 in 208ms (next.js: 80ms, application-code: 127ms)
+✓ Compiled in 1951ms
+ GET /survival 200 in 617ms (next.js: 277ms, application-code: 340ms)
+✓ Compiled in 2.5s
+ GET /survival 200 in 448ms (next.js: 234ms, application-code: 214ms)
+✓ Compiled in 1698ms
+ GET /survival 200 in 310ms (next.js: 155ms, application-code: 155ms)
+✓ Compiled in 2.6s
+✓ Compiled in 1565ms
+ GET /survival 200 in 664ms (next.js: 286ms, application-code: 378ms)
+ GET /survival 200 in 614ms (next.js: 285ms, application-code: 330ms)
+✓ Compiled in 1839ms
+✓ Compiled in 585ms
+ GET /survival 200 in 420ms (next.js: 75ms, application-code: 345ms)
+ GET /survival 200 in 284ms (next.js: 58ms, application-code: 226ms)
+✓ Compiled in 2.4s
+ GET /survival 200 in 945ms (next.js: 459ms, application-code: 485ms)
+✓ Compiled in 2.2s
+ GET /survival 200 in 279ms (next.js: 80ms, application-code: 199ms)
+✓ Compiled in 1497ms
+ GET /survival 200 in 228ms (next.js: 79ms, application-code: 149ms)
+✓ Compiled in 908ms
+ GET /survival 200 in 152ms (next.js: 52ms, application-code: 100ms)
+✓ Compiled in 478ms
+ GET /survival 200 in 155ms (next.js: 54ms, application-code: 101ms)
+✓ Compiled in 1723ms
+ GET /survival 200 in 245ms (next.js: 147ms, application-code: 98ms)
+✓ Compiled in 1707ms
+ GET /survival 200 in 168ms (next.js: 70ms, application-code: 98ms)
+✓ Compiled in 2.1s
+ GET /survival 200 in 793ms (next.js: 312ms, application-code: 481ms)
+✓ Compiled in 1530ms
+ GET /survival 200 in 546ms (next.js: 284ms, application-code: 262ms)
+✓ Compiled in 519ms
+ GET /survival 200 in 445ms (next.js: 216ms, application-code: 229ms)
+✓ Compiled in 1021ms
+ GET /survival 200 in 256ms (next.js: 74ms, application-code: 182ms)
+✓ Compiled in 871ms
+ GET /survival 200 in 155ms (next.js: 57ms, application-code: 98ms)
+✓ Compiled in 2.4s
+ GET /survival 200 in 205ms (next.js: 80ms, application-code: 125ms)
+✓ Compiled in 1587ms
+ GET /survival 200 in 199ms (next.js: 70ms, application-code: 129ms)
+✓ Compiled in 1694ms
+ GET /survival 200 in 218ms (next.js: 62ms, application-code: 156ms)
+✓ Compiled in 772ms
+ GET /survival 200 in 154ms (next.js: 61ms, application-code: 93ms)
+✓ Compiled in 605ms
+ GET /survival 200 in 172ms (next.js: 75ms, application-code: 97ms)
+✓ Compiled in 908ms
+ GET /survival 200 in 308ms (next.js: 75ms, application-code: 233ms)
+✓ Compiled in 946ms
+ GET /survival 200 in 265ms (next.js: 51ms, application-code: 215ms)
+✓ Compiled in 484ms
+ GET /survival 200 in 170ms (next.js: 55ms, application-code: 115ms)
+✓ Compiled in 783ms
+ GET /survival 200 in 743ms (next.js: 333ms, application-code: 410ms)
+✓ Compiled in 1866ms
+ GET /survival 200 in 326ms (next.js: 114ms, application-code: 213ms)
+✓ Compiled in 2.5s
+ GET /survival 200 in 352ms (next.js: 137ms, application-code: 215ms)
+✓ Compiled in 1020ms
+ GET /survival 200 in 512ms (next.js: 66ms, application-code: 446ms)
+✓ Compiled in 2000ms
+ GET /survival 200 in 637ms (next.js: 250ms, application-code: 387ms)
+✓ Compiled in 1227ms
+ GET /survival 200 in 326ms (next.js: 102ms, application-code: 225ms)
+✓ Compiled in 1893ms
+ GET /survival 200 in 211ms (next.js: 88ms, application-code: 123ms)
+✓ Compiled in 629ms
+ GET /survival 200 in 321ms (next.js: 65ms, application-code: 255ms)
+✓ Compiled in 472ms
+ GET /survival 200 in 166ms (next.js: 65ms, application-code: 102ms)
+✓ Compiled in 1188ms
+ GET /survival 200 in 212ms (next.js: 77ms, application-code: 135ms)
+✓ Compiled in 1115ms
+ GET /survival 200 in 212ms (next.js: 64ms, application-code: 148ms)
+✓ Compiled in 782ms
+ GET /survival 200 in 152ms (next.js: 57ms, application-code: 94ms)
+✓ Compiled in 577ms
+ GET /survival 200 in 193ms (next.js: 70ms, application-code: 123ms)
+✓ Compiled in 1319ms
+ GET /survival 200 in 199ms (next.js: 54ms, application-code: 145ms)
+✓ Compiled in 576ms
+ GET /survival 200 in 246ms (next.js: 102ms, application-code: 144ms)
+✓ Compiled in 1446ms
+ GET /survival 200 in 314ms (next.js: 141ms, application-code: 173ms)
+✓ Compiled in 487ms
+ GET /survival 200 in 130ms (next.js: 56ms, application-code: 74ms)
+✓ Compiled in 793ms
+ GET /survival 200 in 176ms (next.js: 95ms, application-code: 81ms)
+✓ Compiled in 639ms
+ GET /survival 200 in 583ms (next.js: 174ms, application-code: 409ms)
+✓ Compiled in 314ms
+ GET /survival 200 in 148ms (next.js: 57ms, application-code: 91ms)
+✓ Compiled in 355ms
+ GET /survival 200 in 121ms (next.js: 55ms, application-code: 67ms)
+✓ Compiled in 1331ms
+ GET /survival 200 in 150ms (next.js: 60ms, application-code: 91ms)
+✓ Compiled in 726ms
+ GET /survival 200 in 188ms (next.js: 99ms, application-code: 89ms)
+✓ Compiled in 1431ms
+ GET /survival 200 in 450ms (next.js: 246ms, application-code: 205ms)
+✓ Compiled in 958ms
+ GET /survival 200 in 402ms (next.js: 163ms, application-code: 239ms)
+✓ Compiled in 521ms
+ GET /survival 200 in 171ms (next.js: 61ms, application-code: 110ms)
+✓ Compiled in 1491ms
+ GET /survival 200 in 330ms (next.js: 172ms, application-code: 159ms)
+✓ Compiled in 1047ms
+ GET /survival 200 in 259ms (next.js: 139ms, application-code: 119ms)
+✓ Compiled in 2.2s
+ GET /survival 200 in 264ms (next.js: 70ms, application-code: 194ms)
+✓ Compiled in 844ms
+ GET /survival 200 in 203ms (next.js: 68ms, application-code: 135ms)
+✓ Compiled in 406ms
+ GET /survival 200 in 158ms (next.js: 56ms, application-code: 101ms)
+✓ Compiled in 946ms
+ GET /survival 200 in 145ms (next.js: 55ms, application-code: 90ms)
+✓ Compiled in 1481ms
+ GET /survival 200 in 194ms (next.js: 56ms, application-code: 138ms)
+✓ Compiled in 1493ms
+ GET /survival 200 in 233ms (next.js: 66ms, application-code: 167ms)
+✓ Compiled in 1237ms
+ GET /survival 200 in 384ms (next.js: 87ms, application-code: 297ms)
+✓ Compiled in 651ms
+ GET /survival 200 in 502ms (next.js: 77ms, application-code: 425ms)
+✓ Compiled in 893ms
+ GET /survival 200 in 289ms (next.js: 144ms, application-code: 145ms)
+✓ Compiled in 908ms
+ GET /survival 200 in 153ms (next.js: 53ms, application-code: 100ms)
+✓ Compiled in 1641ms
+ GET /survival 200 in 178ms (next.js: 59ms, application-code: 119ms)
+✓ Compiled in 1204ms
+ GET /survival 200 in 257ms (next.js: 60ms, application-code: 196ms)
+✓ Compiled in 1310ms
+ GET /survival 200 in 172ms (next.js: 63ms, application-code: 108ms)
+✓ Compiled in 2.9s
+ GET /survival 200 in 163ms (next.js: 56ms, application-code: 107ms)
+✓ Compiled in 2.2s
+ GET /survival 200 in 204ms (next.js: 102ms, application-code: 102ms)
+✓ Compiled in 2.2s
+ GET /survival 200 in 495ms (next.js: 137ms, application-code: 358ms)
+✓ Compiled in 1412ms
+ GET /survival 200 in 237ms (next.js: 60ms, application-code: 176ms)
+✓ Compiled in 1301ms
+ GET /survival 200 in 569ms (next.js: 75ms, application-code: 494ms)
+✓ Compiled in 1991ms
+ GET /survival 200 in 238ms (next.js: 77ms, application-code: 162ms)
+✓ Compiled in 1790ms
+ GET /survival 200 in 326ms (next.js: 87ms, application-code: 239ms)
+✓ Compiled in 1091ms
+ GET /survival 200 in 1236ms (next.js: 417ms, application-code: 819ms)
+✓ Compiled in 794ms
+ GET /survival 200 in 223ms (next.js: 73ms, application-code: 150ms)
+✓ Compiled in 906ms
+ GET /survival 200 in 192ms (next.js: 53ms, application-code: 139ms)
+✓ Compiled in 2.3s
+ GET /survival 200 in 345ms (next.js: 107ms, application-code: 238ms)
+✓ Compiled in 2.2s
+ GET /survival 200 in 287ms (next.js: 86ms, application-code: 201ms)
+✓ Compiled in 1308ms
+ GET /survival 200 in 315ms (next.js: 83ms, application-code: 232ms)
+✓ Compiled in 815ms
+ GET /survival 200 in 235ms (next.js: 77ms, application-code: 158ms)
+✓ Compiled in 2.7s
+ GET /survival 200 in 1169ms (next.js: 497ms, application-code: 672ms)
+✓ Compiled in 1191ms
+ GET /survival 200 in 967ms (next.js: 558ms, application-code: 409ms)
+✓ Compiled in 2.4s
+ GET /survival 200 in 183ms (next.js: 60ms, application-code: 123ms)
+✓ Compiled in 1317ms
+ GET /survival 200 in 291ms (next.js: 74ms, application-code: 217ms)
+✓ Compiled in 1526ms
+ GET /survival 200 in 265ms (next.js: 98ms, application-code: 166ms)
+✓ Compiled in 3.4s
+ GET /survival 200 in 239ms (next.js: 84ms, application-code: 156ms)
+✓ Compiled in 992ms
+ GET /survival 200 in 410ms (next.js: 78ms, application-code: 331ms)
+✓ Compiled in 891ms
+ GET /survival 200 in 201ms (next.js: 58ms, application-code: 143ms)
+✓ Compiled in 635ms
+ GET /survival 200 in 1022ms (next.js: 171ms, application-code: 851ms)
+✓ Compiled in 2.6s
+ GET /survival 200 in 135ms (next.js: 44ms, application-code: 91ms)
+✓ Compiled in 1836ms
+ GET /survival 200 in 180ms (next.js: 66ms, application-code: 114ms)
+✓ Compiled in 1304ms
+ GET /survival 200 in 294ms (next.js: 161ms, application-code: 133ms)
+✓ Compiled in 1459ms
+ GET /survival 200 in 218ms (next.js: 91ms, application-code: 128ms)
+✓ Compiled in 1009ms
+ GET /survival 200 in 214ms (next.js: 88ms, application-code: 126ms)
+✓ Compiled in 1800ms
+ GET /survival 200 in 1267ms (next.js: 483ms, application-code: 784ms)
+✓ Compiled in 2.1s
+ GET /survival 200 in 729ms (next.js: 263ms, application-code: 466ms)
+ GET /survival 200 in 1037ms (next.js: 409ms, application-code: 628ms)
+✓ Compiled in 776ms
+ GET /survival 200 in 428ms (next.js: 210ms, application-code: 218ms)
+✓ Compiled in 2.3s
+ GET /survival 200 in 915ms (next.js: 349ms, application-code: 566ms)
+✓ Compiled in 1719ms
+ GET /survival 200 in 184ms (next.js: 55ms, application-code: 129ms)
+✓ Compiled in 1962ms
+ GET /survival 200 in 312ms (next.js: 111ms, application-code: 202ms)
+✓ Compiled in 1857ms
+ GET /survival 200 in 253ms (next.js: 70ms, application-code: 183ms)
+✓ Compiled in 1918ms
+ GET /survival 200 in 534ms (next.js: 112ms, application-code: 422ms)
+✓ Compiled in 1763ms
+✓ Compiled in 644ms
+ GET /survival 200 in 217ms (next.js: 77ms, application-code: 141ms)
+✓ Compiled in 2.3s
+ GET /survival 200 in 288ms (next.js: 113ms, application-code: 175ms)
+✓ Compiled in 660ms
+ GET /survival 200 in 822ms (next.js: 264ms, application-code: 559ms)
+✓ Compiled in 2.2s
+ GET /survival 200 in 333ms (next.js: 143ms, application-code: 190ms)
+✓ Compiled in 1451ms
+ GET /survival 200 in 319ms (next.js: 92ms, application-code: 226ms)
+✓ Compiled in 494ms
+ GET /survival 200 in 158ms (next.js: 56ms, application-code: 102ms)
+✓ Compiled in 1482ms
+ GET /survival 200 in 315ms (next.js: 110ms, application-code: 205ms)
+✓ Compiled in 569ms
+ GET /survival 200 in 240ms (next.js: 108ms, application-code: 132ms)
+✓ Compiled in 501ms
+ GET /survival 200 in 153ms (next.js: 56ms, application-code: 96ms)
+✓ Compiled in 522ms
+ GET /survival 200 in 168ms (next.js: 59ms, application-code: 109ms)
+✓ Compiled in 1252ms
+ GET /survival 200 in 208ms (next.js: 67ms, application-code: 141ms)
+✓ Compiled in 491ms
+ GET /survival 200 in 736ms (next.js: 59ms, application-code: 678ms)
+ GET /survival 200 in 184ms (next.js: 66ms, application-code: 119ms)
+✓ Compiled in 2.3s
+✓ Compiled in 2.2s
+ GET /survival 200 in 186ms (next.js: 88ms, application-code: 98ms)
+✓ Compiled in 1079ms
+ GET /survival 200 in 271ms (next.js: 81ms, application-code: 189ms)
+✓ Compiled in 2.2s
+ GET /survival 200 in 211ms (next.js: 53ms, application-code: 158ms)
+ GET /survival 200 in 3.2s (next.js: 1912ms, application-code: 1246ms)
+ GET /survival 200 in 384ms (next.js: 70ms, application-code: 314ms)
+✓ Compiled in 3.8s
+ GET /survival 200 in 652ms (next.js: 362ms, application-code: 289ms)
+✓ Compiled in 1036ms
+ GET /survival 200 in 688ms (next.js: 303ms, application-code: 385ms)
+ GET /survival 200 in 3.2s (next.js: 2.2s, application-code: 1012ms)
+ GET /survival 200 in 253ms (next.js: 39ms, application-code: 214ms)
+✓ Compiled in 2.6s
+ GET /survival 200 in 1934ms (next.js: 1306ms, application-code: 628ms)
+ GET /survival 200 in 1122ms (next.js: 738ms, application-code: 384ms)
+✓ Compiled in 3s
+ GET /survival 200 in 3.7s (next.js: 540ms, application-code: 3.1s)
+✓ Compiled in 2.2s
+ GET /survival 200 in 1514ms (next.js: 936ms, application-code: 578ms)
+✓ Compiled in 1860ms
+ GET /survival 200 in 241ms (next.js: 87ms, application-code: 154ms)
+✓ Compiled in 1932ms
+ GET /survival 200 in 553ms (next.js: 204ms, application-code: 349ms)
+ GET /survival 200 in 1712ms (next.js: 850ms, application-code: 862ms)
+ GET /survival 200 in 190ms (next.js: 35ms, application-code: 155ms)
+✓ Compiled in 5s
+ GET /survival 200 in 1640ms (next.js: 660ms, application-code: 980ms)
+✓ Compiled in 8.3s
+✓ Compiled in 1304ms
+ GET /survival 200 in 3.6s (next.js: 2.0s, application-code: 1632ms)
+ GET /survival 200 in 1093ms (next.js: 874ms, application-code: 219ms)
+✓ Compiled in 1790ms
+ GET /survival 200 in 487ms (next.js: 180ms, application-code: 307ms)
+✓ Compiled in 4.6s
+ GET /survival 200 in 387ms (next.js: 118ms, application-code: 269ms)
+✓ Compiled in 2.6s
+ GET /survival 200 in 183ms (next.js: 75ms, application-code: 108ms)
+✓ Compiled in 4.3s
+ GET /survival 200 in 1892ms (next.js: 223ms, application-code: 1669ms)
+✓ Compiled in 2.7s
+ GET /survival 200 in 902ms (next.js: 364ms, application-code: 539ms)
+✓ Compiled in 2.7s
+✓ Compiled in 3.8s
+ GET /survival 200 in 1723ms (next.js: 657ms, application-code: 1066ms)
+✓ Compiled in 2.2s
+ GET /survival 200 in 916ms (next.js: 366ms, application-code: 549ms)
+✓ Compiled in 1366ms
+ GET /survival 200 in 303ms (next.js: 98ms, application-code: 204ms)
+✓ Compiled in 941ms
+ GET /survival 200 in 193ms (next.js: 74ms, application-code: 119ms)
+✓ Compiled in 442ms
+ GET /survival 200 in 212ms (next.js: 78ms, application-code: 133ms)
+✓ Compiled in 1556ms
+ GET /survival 200 in 260ms (next.js: 160ms, application-code: 100ms)
+ GET /survival 200 in 528ms (next.js: 352ms, application-code: 176ms)
+ GET /survival 200 in 150ms (next.js: 20ms, application-code: 130ms)
+ GET /survival 200 in 138ms (next.js: 19ms, application-code: 119ms)
+ GET /survival 200 in 159ms (next.js: 22ms, application-code: 136ms)
+✓ Compiled in 3.7s
+ GET /survival 200 in 757ms (next.js: 293ms, application-code: 464ms)
+✓ Compiled in 1736ms
+ GET /survival 200 in 200ms (next.js: 75ms, application-code: 125ms)
+✓ Compiled in 986ms
+ GET /survival 200 in 300ms (next.js: 76ms, application-code: 224ms)
+✓ Compiled in 1685ms
+ GET /survival 200 in 620ms (next.js: 233ms, application-code: 388ms)
+✓ Compiled in 1614ms
+ GET /survival 200 in 1243ms (next.js: 466ms, application-code: 777ms)
+✓ Compiled in 1589ms
+ GET /survival 200 in 292ms (next.js: 123ms, application-code: 169ms)
+✓ Compiled in 1556ms
+ GET /survival 200 in 174ms (next.js: 54ms, application-code: 120ms)
+✓ Compiled in 2.1s
+ GET /survival 200 in 142ms (next.js: 62ms, application-code: 80ms)
+✓ Compiled in 1766ms
+ GET /survival 200 in 514ms (next.js: 155ms, application-code: 359ms)
+✓ Compiled in 2.2s
+ GET /survival 200 in 346ms (next.js: 146ms, application-code: 200ms)
+✓ Compiled in 3.2s
+ GET /survival 200 in 1293ms (next.js: 760ms, application-code: 533ms)
+✓ Compiled in 1810ms
+ GET /survival 200 in 341ms (next.js: 117ms, application-code: 224ms)
+ GET /survival 200 in 1259ms (next.js: 698ms, application-code: 561ms)
+✓ Compiled in 1274ms
+ GET /survival 200 in 192ms (next.js: 66ms, application-code: 126ms)
+ GET /survival 200 in 2.2s (next.js: 1074ms, application-code: 1114ms)
+✓ Compiled in 3.7s
+ GET /survival 200 in 845ms (next.js: 543ms, application-code: 302ms)
+ GET /survival 200 in 848ms (next.js: 484ms, application-code: 364ms)
+ GET /survival 200 in 191ms (next.js: 27ms, application-code: 164ms)
+✓ Compiled in 4.9s
+ GET /survival 200 in 1213ms (next.js: 375ms, application-code: 838ms)
+✓ Compiled in 1625ms
+ GET /survival 200 in 274ms (next.js: 115ms, application-code: 158ms)
+✓ Compiled in 1615ms
+ GET /survival 200 in 287ms (next.js: 72ms, application-code: 215ms)
+✓ Compiled in 3.8s
+ GET /survival 200 in 299ms (next.js: 103ms, application-code: 196ms)
+✓ Compiled in 4.3s
+ GET /survival 200 in 709ms (next.js: 375ms, application-code: 334ms)
+✓ Compiled in 4.2s
+ GET /survival 200 in 697ms (next.js: 242ms, application-code: 455ms)
+✓ Compiled in 2.1s
+ GET /survival 200 in 576ms (next.js: 228ms, application-code: 349ms)
+✓ Compiled in 1550ms
+ GET /survival 200 in 278ms (next.js: 75ms, application-code: 202ms)
+✓ Compiled in 4.3s
+ GET /survival 200 in 1737ms (next.js: 262ms, application-code: 1476ms)
+✓ Compiled in 1835ms
+ GET /survival 200 in 262ms (next.js: 98ms, application-code: 164ms)
+✓ Compiled in 2.5s
+ GET /survival 200 in 177ms (next.js: 71ms, application-code: 106ms)
+✓ Compiled in 2.7s
+ GET /survival 200 in 592ms (next.js: 252ms, application-code: 340ms)
+✓ Finished filesystem cache database compaction in 10.1s
+✓ Compiled in 1141ms
+ GET /survival 200 in 784ms (next.js: 398ms, application-code: 386ms)
+✓ Compiled in 3.6s
+ GET /survival 200 in 821ms (next.js: 184ms, application-code: 637ms)
+✓ Compiled in 3.8s
+ GET /survival 200 in 306ms (next.js: 95ms, application-code: 211ms)
+✓ Compiled in 4.7s
+ GET /survival 200 in 1094ms (next.js: 182ms, application-code: 912ms)
+✓ Compiled in 2.6s
+ GET /survival 200 in 490ms (next.js: 168ms, application-code: 322ms)
+✓ Compiled in 1654ms
+ GET /survival 200 in 257ms (next.js: 128ms, application-code: 129ms)
+ GET /survival 200 in 2.5s (next.js: 736ms, application-code: 1784ms)
+ GET /dashboard 200 in 3.1s (next.js: 194ms, proxy.ts: 2.7s, application-code: 228ms)
+ GET /dashboard 200 in 3.2s (next.js: 748ms, proxy.ts: 2.2s, application-code: 218ms)
+ GET /dashboard 200 in 3.7s (next.js: 1396ms, proxy.ts: 1911ms, application-code: 437ms)
+ GET /dashboard 200 in 895ms (next.js: 124ms, proxy.ts: 494ms, application-code: 278ms)
+ GET /dashboard 200 in 437ms (next.js: 72ms, proxy.ts: 263ms, application-code: 102ms)
+ GET /dashboard 200 in 378ms (next.js: 49ms, proxy.ts: 234ms, application-code: 95ms)
+✓ Compiled in 1916ms
+ GET /dashboard 200 in 3.9s (next.js: 861ms, proxy.ts: 2.8s, application-code: 254ms)
+✓ Compiled in 1409ms
+ GET /dashboard 200 in 549ms (next.js: 35ms, proxy.ts: 315ms, application-code: 199ms)
+✓ Compiled in 1040ms
+ GET /dashboard 200 in 1412ms (next.js: 33ms, proxy.ts: 1271ms, application-code: 108ms)
+✓ Compiled in 1546ms
+✓ Compiled in 1201ms
+ GET /dashboard 200 in 3.7s (next.js: 585ms, proxy.ts: 3.0s, application-code: 105ms)
+✓ Compiled in 937ms
+✓ Compiled in 1638ms
+✓ Compiled in 1997ms
+ GET /dashboard 200 in 2.9s (next.js: 563ms, proxy.ts: 448ms, application-code: 1870ms)
+ GET /survival 200 in 3.1s (next.js: 2.5s, application-code: 630ms)
+ GET /survival 200 in 238ms (next.js: 72ms, application-code: 166ms)
+ GET /survival 200 in 148ms (next.js: 31ms, application-code: 117ms)
+ GET /survival 200 in 1665ms (next.js: 476ms, application-code: 1189ms)
+ GET /survival 200 in 961ms (next.js: 228ms, application-code: 733ms)
+ GET /survival 200 in 290ms (next.js: 104ms, application-code: 186ms)
+ GET /survival 200 in 302ms (next.js: 132ms, application-code: 170ms)
+ GET /dashboard 200 in 2.7s (next.js: 106ms, proxy.ts: 2.3s, application-code: 342ms)
+ GET /dashboard 200 in 1892ms (next.js: 38ms, proxy.ts: 1632ms, application-code: 222ms)
+ GET /dashboard 200 in 1229ms (next.js: 87ms, proxy.ts: 1006ms, application-code: 136ms)
+ GET /dashboard 200 in 3.6s (next.js: 1060ms, proxy.ts: 2.0s, application-code: 488ms)
+ GET /dashboard 200 in 292ms (next.js: 25ms, proxy.ts: 158ms, application-code: 109ms)
+ GET /dashboard 200 in 289ms (next.js: 23ms, proxy.ts: 155ms, application-code: 112ms)
+ GET /dashboard 200 in 304ms (next.js: 23ms, proxy.ts: 141ms, application-code: 139ms)
+ GET /dashboard 200 in 288ms (next.js: 20ms, proxy.ts: 165ms, application-code: 104ms)
+ GET /dashboard 200 in 430ms (next.js: 21ms, proxy.ts: 322ms, application-code: 87ms)
+ GET /dashboard 200 in 283ms (next.js: 15ms, proxy.ts: 142ms, application-code: 126ms)
+ GET /dashboard 200 in 268ms (next.js: 15ms, proxy.ts: 135ms, application-code: 117ms)
+ GET /dashboard 200 in 271ms (next.js: 16ms, proxy.ts: 152ms, application-code: 103ms)
+ GET /dashboard 200 in 353ms (next.js: 24ms, proxy.ts: 153ms, application-code: 175ms)
+ GET /dashboard 200 in 302ms (next.js: 25ms, proxy.ts: 175ms, application-code: 103ms)
+ GET /dashboard 200 in 299ms (next.js: 27ms, proxy.ts: 154ms, application-code: 118ms)
+ GET /dashboard 200 in 393ms (next.js: 17ms, proxy.ts: 182ms, application-code: 193ms)
+ GET /dashboard 200 in 298ms (next.js: 22ms, proxy.ts: 166ms, application-code: 110ms)
+ GET /dashboard 200 in 759ms (next.js: 416ms, proxy.ts: 210ms, application-code: 133ms)
+ GET /dashboard 200 in 303ms (next.js: 20ms, proxy.ts: 157ms, application-code: 126ms)
+ GET /dashboard 200 in 332ms (next.js: 26ms, proxy.ts: 147ms, application-code: 159ms)
+ GET /dashboard 200 in 319ms (next.js: 21ms, proxy.ts: 149ms, application-code: 150ms)
+ GET /dashboard 200 in 287ms (next.js: 24ms, proxy.ts: 151ms, application-code: 112ms)
+ GET /dashboard 200 in 302ms (next.js: 26ms, proxy.ts: 158ms, application-code: 119ms)
+ GET /dashboard 200 in 298ms (next.js: 21ms, proxy.ts: 148ms, application-code: 129ms)
+ GET /dashboard 200 in 400ms (next.js: 34ms, proxy.ts: 159ms, application-code: 207ms)
+ GET /dashboard 200 in 288ms (next.js: 26ms, proxy.ts: 160ms, application-code: 101ms)
+ GET /dashboard 200 in 270ms (next.js: 29ms, proxy.ts: 148ms, application-code: 93ms)
+ GET /login 200 in 2.5s (next.js: 1210ms, application-code: 1259ms)
+○ Compiling /defence ...
+ GET /defence 200 in 6.4s (next.js: 5.9s, application-code: 443ms)
+ GET /hunt 200 in 1908ms (next.js: 1315ms, application-code: 593ms)
+ GET /dashboard 200 in 843ms (next.js: 136ms, proxy.ts: 637ms, application-code: 70ms)
+✓ Compiled in 2.4s
+ GET /dashboard 200 in 1087ms (next.js: 570ms, proxy.ts: 339ms, application-code: 178ms)
+✓ Compiled in 1267ms
+ GET /dashboard 200 in 901ms (next.js: 382ms, proxy.ts: 304ms, application-code: 216ms)
+✓ Compiled in 3.1s
+ GET /dashboard 200 in 1188ms (next.js: 78ms, proxy.ts: 996ms, application-code: 113ms)
+✓ Compiled in 490ms
+✓ Compiled in 503ms
+ GET /login 200 in 1483ms (next.js: 479ms, application-code: 1003ms)
+✓ Compiled in 1988ms
+✓ Compiled in 2.7s
+ GET /login 200 in 224ms (next.js: 27ms, application-code: 197ms)
+✓ Compiled in 2.2s
+✓ Compiled in 4.6s
+ GET /dashboard 200 in 3.0s (next.js: 1317ms, proxy.ts: 1568ms, application-code: 140ms)
+✓ Compiled in 1555ms
+ GET /dashboard 200 in 431ms (next.js: 95ms, proxy.ts: 215ms, application-code: 121ms)
+✓ Compiled in 1959ms
+ GET /dashboard 200 in 1406ms (next.js: 168ms, proxy.ts: 1095ms, application-code: 143ms)
+ GET /login 200 in 1129ms (next.js: 206ms, application-code: 923ms)
+ GET /dashboard 200 in 2.3s (next.js: 107ms, proxy.ts: 1696ms, application-code: 541ms)
+ GET /dashboard 200 in 318ms (next.js: 25ms, proxy.ts: 163ms, application-code: 130ms)
+ GET /defence 200 in 306ms (next.js: 95ms, application-code: 211ms)
+ GET /defence 200 in 997ms (next.js: 505ms, application-code: 492ms)
+ GET /defence 200 in 211ms (next.js: 88ms, application-code: 123ms)
+ GET /defence 200 in 238ms (next.js: 97ms, application-code: 141ms)
+ GET /defence 200 in 2.0s (next.js: 849ms, application-code: 1163ms)
+ GET /defence 200 in 283ms (next.js: 94ms, application-code: 189ms)
+ GET /defence 200 in 264ms (next.js: 94ms, application-code: 170ms)
+ GET /defence 200 in 306ms (next.js: 88ms, application-code: 218ms)
+ GET /defence 200 in 264ms (next.js: 81ms, application-code: 183ms)
+ GET /defence 200 in 370ms (next.js: 73ms, application-code: 297ms)
+ GET /defence 200 in 1258ms (next.js: 581ms, application-code: 678ms)
+ GET /defence 200 in 240ms (next.js: 81ms, application-code: 159ms)
+ GET /defence 200 in 474ms (next.js: 87ms, application-code: 387ms)
+ GET /defence 200 in 610ms (next.js: 76ms, application-code: 535ms)
+ GET /defence 200 in 842ms (next.js: 156ms, application-code: 686ms)
+ GET /defence 200 in 459ms (next.js: 141ms, application-code: 317ms)
+ GET /defence 200 in 256ms (next.js: 69ms, application-code: 187ms)
+ GET /defence 200 in 345ms (next.js: 96ms, application-code: 249ms)
+ GET /defence 200 in 252ms (next.js: 65ms, application-code: 187ms)
+ GET /defence 200 in 286ms (next.js: 86ms, application-code: 200ms)
+✓ Compiled in 2.4s
+ GET /defence 200 in 4.7s (next.js: 2.7s, application-code: 2.0s)
+ GET /defence 200 in 6.1s (next.js: 1639ms, application-code: 4.5s)
+ GET /defence 200 in 747ms (next.js: 132ms, application-code: 616ms)
+ GET /defence 200 in 976ms (next.js: 829ms, application-code: 148ms)
+✓ Compiled in 4.8s
+ GET /defence 200 in 1353ms (next.js: 891ms, application-code: 462ms)
+✓ Compiled in 4.1s
+✓ Finished filesystem cache database compaction in 11.1s
+ GET /defence 200 in 2.2s (next.js: 1218ms, application-code: 960ms)
+✓ Compiled in 1733ms
+ GET /defence 200 in 515ms (next.js: 211ms, application-code: 304ms)
+✓ Compiled in 3.5s
+ GET /defence 200 in 3.1s (next.js: 1500ms, application-code: 1590ms)
+✓ Compiled in 6.8s
+ GET /defence 200 in 2.6s (next.js: 732ms, application-code: 1832ms)
+ GET /defence 200 in 2.4s (next.js: 1438ms, application-code: 938ms)
+ GET /defence 200 in 2.5s (next.js: 1049ms, application-code: 1453ms)
+ GET /survival 200 in 784ms (next.js: 481ms, application-code: 304ms)
+ GET /login 200 in 3.0s (next.js: 1097ms, application-code: 1890ms)
+ GET /login 200 in 461ms (next.js: 102ms, application-code: 360ms)
+ GET /dashboard 200 in 2.5s (next.js: 166ms, proxy.ts: 2.3s, application-code: 65ms)
+ GET /defence 200 in 113ms (next.js: 38ms, application-code: 74ms)
+ GET /defence 200 in 1241ms (next.js: 501ms, application-code: 740ms)
+ GET /defence 200 in 274ms (next.js: 86ms, application-code: 188ms)
+ GET /defence 200 in 262ms (next.js: 84ms, application-code: 178ms)
+ GET /defence 200 in 358ms (next.js: 81ms, application-code: 277ms)
+ GET /defence 200 in 186ms (next.js: 81ms, application-code: 105ms)
+ GET /defence 200 in 461ms (next.js: 152ms, application-code: 309ms)
+ GET /defence 200 in 343ms (next.js: 127ms, application-code: 216ms)
+ GET /defence 200 in 364ms (next.js: 151ms, application-code: 212ms)
+ GET /defence 200 in 533ms (next.js: 95ms, application-code: 439ms)
+ GET /defence 200 in 236ms (next.js: 96ms, application-code: 141ms)
+ GET /defence 200 in 1922ms (next.js: 1300ms, application-code: 622ms)
+ GET /defence 200 in 888ms (next.js: 649ms, application-code: 239ms)
+ GET /survival 200 in 271ms (next.js: 148ms, application-code: 123ms)
+ GET /defence 200 in 250ms (next.js: 23ms, application-code: 227ms)
+✓ Compiled in 2.9s
+ GET /defence 200 in 1134ms (next.js: 370ms, application-code: 764ms)
+ GET /defence 200 in 1275ms (next.js: 817ms, application-code: 458ms)
+ GET /defence 200 in 308ms (next.js: 51ms, application-code: 258ms)
+✓ Compiled in 5.1s
+ GET /defence 200 in 525ms (next.js: 256ms, application-code: 269ms)
+✓ Compiled in 1165ms
+ GET /defence 200 in 477ms (next.js: 141ms, application-code: 336ms)
+✓ Compiled in 1426ms
+ GET /defence 200 in 2.5s (next.js: 355ms, application-code: 2.2s)
+✓ Compiled in 2.7s
+ GET /defence 200 in 307ms (next.js: 80ms, application-code: 227ms)
+ GET /defence 200 in 3.1s (next.js: 1707ms, application-code: 1376ms)
+ GET /survival 200 in 837ms (next.js: 382ms, application-code: 455ms)
+ GET /defence 200 in 258ms (next.js: 44ms, application-code: 214ms)
+✓ Compiled in 6.1s
+ GET /defence 200 in 629ms (next.js: 286ms, application-code: 343ms)
+✓ Compiled in 3.2s
+ GET /defence 200 in 2.0s (next.js: 1308ms, application-code: 741ms)
+✓ Compiled in 3s
+ GET /defence 200 in 797ms (next.js: 257ms, application-code: 541ms)
+✓ Compiled in 3.2s
+ GET /defence 200 in 623ms (next.js: 263ms, application-code: 360ms)
+✓ Compiled in 3s
+ GET /defence 200 in 306ms (next.js: 101ms, application-code: 205ms)
+✓ Compiled in 3.4s
+ GET /defence 200 in 771ms (next.js: 306ms, application-code: 464ms)
+ GET /defence 200 in 1088ms (next.js: 848ms, application-code: 240ms)
+✓ Compiled in 5.4s
+ GET /defence 200 in 519ms (next.js: 257ms, application-code: 262ms)
+ GET /defence 200 in 2.7s (next.js: 2.0s, application-code: 680ms)
+ GET /defence 200 in 225ms (next.js: 34ms, application-code: 190ms)
+ GET /defence 200 in 427ms (next.js: 132ms, application-code: 295ms)
+ GET /defence 200 in 185ms (next.js: 40ms, application-code: 145ms)
+✓ Compiled in 4.1s
+ GET /defence 200 in 1212ms (next.js: 456ms, application-code: 756ms)
+✓ Compiled in 717ms
+ GET /defence 200 in 284ms (next.js: 115ms, application-code: 169ms)
+✓ Compiled in 3.1s
+ GET /defence 200 in 295ms (next.js: 102ms, application-code: 193ms)
+✓ Compiled in 5.3s
+ GET /defence 200 in 201ms (next.js: 75ms, application-code: 126ms)
+✓ Compiled in 2.4s
+ GET /defence 200 in 303ms (next.js: 98ms, application-code: 205ms)
+✓ Compiled in 2.1s
+ GET /defence 200 in 436ms (next.js: 125ms, application-code: 311ms)
+✓ Compiled in 1908ms
+ GET /defence 200 in 185ms (next.js: 58ms, application-code: 127ms)
+✓ Compiled in 2.9s
+ GET /defence 200 in 647ms (next.js: 320ms, application-code: 327ms)
+✓ Compiled in 2.4s
+ GET /defence 200 in 588ms (next.js: 81ms, application-code: 507ms)
+✓ Compiled in 1822ms
+ GET /defence 200 in 252ms (next.js: 99ms, application-code: 153ms)
+✓ Compiled in 4.5s
+ GET /defence 200 in 432ms (next.js: 129ms, application-code: 304ms)
+✓ Compiled in 2.9s
+ GET /defence 200 in 559ms (next.js: 323ms, application-code: 236ms)
+✓ Compiled in 7s
+ GET /defence 200 in 1430ms (next.js: 888ms, application-code: 542ms)
+✓ Compiled in 4.1s
+ GET /defence 200 in 3.0s (next.js: 260ms, application-code: 2.7s)
+✓ Compiled in 3.6s
+ GET /defence 200 in 2.7s (next.js: 1154ms, application-code: 1520ms)
+✓ Compiled in 2.2s
+ GET /defence 200 in 478ms (next.js: 178ms, application-code: 300ms)
+ GET /defence 200 in 3.3s (next.js: 1575ms, application-code: 1681ms)
+ GET /survival 200 in 764ms (next.js: 219ms, application-code: 545ms)
+ GET /defence 200 in 277ms (next.js: 39ms, application-code: 238ms)
+✓ Compiled in 4.7s
+ GET /defence 200 in 5.0s (next.js: 1107ms, application-code: 3.9s)
+✓ Compiled in 3.3s
+ GET /defence 200 in 827ms (next.js: 240ms, application-code: 587ms)
+✓ Compiled in 2.6s
+ GET /defence 200 in 372ms (next.js: 87ms, application-code: 285ms)
+✓ Compiled in 1170ms
+ GET /defence 200 in 324ms (next.js: 92ms, application-code: 232ms)
+✓ Compiled in 2.6s
+ GET /defence 200 in 510ms (next.js: 124ms, application-code: 386ms)
+✓ Compiled in 2.2s
+ GET /defence 200 in 204ms (next.js: 78ms, application-code: 126ms)
+✓ Compiled in 3.9s
+ GET /defence 200 in 345ms (next.js: 83ms, application-code: 262ms)
+✓ Compiled in 4.3s
+ GET /defence 200 in 748ms (next.js: 344ms, application-code: 404ms)
+✓ Compiled in 2.4s
+ GET /defence 500 in 3.1s (next.js: 184ms, application-code: 2.9s)
+ GET /defence 500 in 300ms (next.js: 51ms, application-code: 249ms)
+ GET /defence 500 in 298ms (next.js: 44ms, application-code: 254ms)
+▲ Next.js 16.3.4 (Turbopack)
+- Local:         http://localhost:3001
+- Network:       http://192.168.0.206:3001
+- Environments: .env
+✓ Ready in 4.2s
+✓ Running next.config.ts took 423ms
+
+[?25h

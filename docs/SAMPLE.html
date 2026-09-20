@@ -1,0 +1,624 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Verdant — A 3D Forest Walk</title>
+<style>
+  :root{
+    --ink:#FFFFFF;
+    --muted:rgba(255,255,255,.66);
+    --line:rgba(255,255,255,.18);
+    --surface:rgba(18,20,18,.72);
+    --accent:#8FD6A4;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%;margin:0;background:#0d1210;overflow:hidden}
+  body{font:16px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,Helvetica,Arial,sans-serif;color:var(--ink);-webkit-font-smoothing:antialiased}
+  canvas{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none}
+
+  /* cinematic grade overlay */
+  #grade{position:fixed;inset:0;pointer-events:none;
+    background:
+      radial-gradient(120% 90% at 50% 45%, rgba(0,0,0,0) 45%, rgba(0,0,0,.42) 100%),
+      linear-gradient(180deg, rgba(10,20,14,.10), rgba(0,0,0,0) 30%);
+    mix-blend-mode:multiply;opacity:.95}
+
+  /* ---------- Start screen ---------- */
+  #intro{position:fixed;inset:0;display:grid;place-items:center;padding:24px;
+    background:radial-gradient(90% 70% at 50% 40%, rgba(12,26,18,.55), rgba(5,9,7,.92));
+    backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);transition:opacity .5s ease}
+  #intro.hidden{opacity:0;pointer-events:none}
+  .card{width:min(560px,100%);border:1px solid var(--line);border-radius:12px;
+    background:var(--surface);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+    padding:40px 40px 32px;box-shadow:0 1px 2px rgba(0,0,0,.25),0 24px 60px rgba(0,0,0,.45)}
+  .eyebrow{font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--accent);margin:0 0 12px}
+  h1{margin:0 0 12px;font-size:44px;line-height:1.05;font-weight:600;letter-spacing:-.02em}
+  .lede{margin:0 0 28px;color:var(--muted);max-width:46ch}
+  .btn{appearance:none;border:0;cursor:pointer;font:inherit;font-weight:600;
+    min-height:48px;padding:0 24px;border-radius:8px;background:var(--accent);color:#0c1b12;
+    transition:transform .12s ease, filter .12s ease}
+  .btn:hover{filter:brightness(1.06)}
+  .btn:active{transform:translateY(1px)}
+  .btn:focus-visible,.chip:focus-visible{outline:2px solid #fff;outline-offset:3px}
+  .keys{display:flex;flex-wrap:wrap;gap:8px 24px;margin:28px 0 0;padding:20px 0 0;border-top:1px solid var(--line);color:var(--muted);font-size:14px}
+  kbd{display:inline-block;min-width:24px;text-align:center;padding:2px 7px;margin-right:6px;border:1px solid var(--line);
+    border-bottom-width:2px;border-radius:6px;background:rgba(255,255,255,.07);font:600 12px/1.5 Menlo,Consolas,monospace;color:#fff}
+
+  /* ---------- HUD ---------- */
+  #hud{position:fixed;inset:auto 0 0 0;padding:16px 24px 20px;display:flex;justify-content:space-between;align-items:flex-end;gap:16px;
+    pointer-events:none;opacity:0;transition:opacity .4s ease}
+  #hud.on{opacity:1}
+  .hint{font-size:13px;color:var(--muted);text-shadow:0 1px 3px rgba(0,0,0,.6)}
+  .times{display:flex;gap:8px;pointer-events:auto}
+  .chip{appearance:none;cursor:pointer;font:inherit;font-size:13px;font-weight:500;color:#fff;
+    min-height:36px;padding:0 14px;border-radius:8px;border:1px solid var(--line);
+    background:rgba(16,20,18,.6);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+  .chip[aria-pressed="true"]{background:var(--accent);color:#0c1b12;border-color:transparent;font-weight:600}
+  #crosshair{position:fixed;left:50%;top:50%;width:5px;height:5px;margin:-2.5px 0 0 -2.5px;border-radius:50%;
+    background:rgba(255,255,255,.75);box-shadow:0 0 6px rgba(0,0,0,.7);opacity:0;transition:opacity .3s}
+  #crosshair.on{opacity:1}
+  #fps{position:fixed;top:16px;right:20px;font:500 12px/1 Menlo,Consolas,monospace;color:rgba(255,255,255,.5);opacity:0;transition:opacity .3s}
+  #fps.on{opacity:1}
+
+  /* touch sticks */
+  #touch{position:fixed;inset:0;display:none}
+  #touch.on{display:block}
+  .pad{position:absolute;bottom:88px;width:120px;height:120px;border:1px solid var(--line);border-radius:50%;background:rgba(255,255,255,.06)}
+  #padL{left:24px}
+  #padR{right:24px}
+
+  @media (max-width:560px){
+    .card{padding:28px 24px 24px}
+    h1{font-size:32px}
+    #hud{flex-direction:column;align-items:flex-start;padding:16px}
+  }
+  @media (prefers-reduced-motion:reduce){ .btn,.chip{transition:none} }
+</style>
+</head>
+<body>
+<canvas id="gl"></canvas>
+<div id="grade"></div>
+<div id="crosshair"></div>
+<div id="fps">—</div>
+
+<div id="hud">
+  <div class="hint" id="hint"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> move · <kbd>Shift</kbd> run · <kbd>Space</kbd> jump · <kbd>Esc</kbd> release mouse</div>
+  <div class="times" role="group" aria-label="Time of day">
+    <button class="chip" data-time="dawn" aria-pressed="false">Dawn mist</button>
+    <button class="chip" data-time="noon" aria-pressed="true">Midday</button>
+    <button class="chip" data-time="dusk" aria-pressed="false">Golden hour</button>
+  </div>
+</div>
+
+<div id="touch"><div class="pad" id="padL"></div><div class="pad" id="padR"></div></div>
+
+<div id="intro">
+  <div class="card">
+    <p class="eyebrow">Real-time 3D · WebGL</p>
+    <h1>Verdant</h1>
+    <p class="lede">Walk through a living pine forest. Volumetric light through the canopy, wind in the grass, fireflies at dusk. No downloads — it runs in your browser.</p>
+    <button class="btn" id="start">Enter the forest</button>
+    <div class="keys">
+      <span><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> Move</span>
+      <span><kbd>Mouse</kbd> Look</span>
+      <span><kbd>Shift</kbd> Sprint</span>
+      <span><kbd>Space</kbd> Jump</span>
+    </div>
+  </div>
+</div>
+
+<script>
+(()=>{
+"use strict";
+const canvas=document.getElementById("gl");
+const gl=canvas.getContext("webgl2",{antialias:true,alpha:false,powerPreference:"high-performance"});
+if(!gl){document.getElementById("intro").innerHTML='<div class="card"><h1>WebGL2 needed</h1><p class="lede">This browser can\u2019t run the forest. Try the latest Chrome, Edge, Safari or Firefox.</p></div>';return;}
+
+/* ===================== math ===================== */
+const V={
+  sub:(a,b)=>[a[0]-b[0],a[1]-b[1],a[2]-b[2]],
+  cross:(a,b)=>[a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]],
+  norm:a=>{const l=Math.hypot(a[0],a[1],a[2])||1;return[a[0]/l,a[1]/l,a[2]/l];},
+  dot:(a,b)=>a[0]*b[0]+a[1]*b[1]+a[2]*b[2]
+};
+function perspective(fovy,aspect,near,far){const f=1/Math.tan(fovy/2);return[f/aspect,0,0,0, 0,f,0,0, 0,0,(far+near)/(near-far),-1, 0,0,2*far*near/(near-far),0];}
+function lookAt(eye,center,up){const z=V.norm(V.sub(eye,center)),x=V.norm(V.cross(up,z)),y=V.cross(z,x);
+  return[x[0],y[0],z[0],0, x[1],y[1],z[1],0, x[2],y[2],z[2],0, -V.dot(x,eye),-V.dot(y,eye),-V.dot(z,eye),1];}
+function mul(a,b){const o=new Array(16);for(let c=0;c<4;c++)for(let r=0;r<4;r++){let s=0;for(let k=0;k<4;k++)s+=a[k*4+r]*b[c*4+k];o[c*4+r]=s;}return o;}
+function inv(m){const a=m,o=new Array(16);
+  const b00=a[0]*a[5]-a[1]*a[4],b01=a[0]*a[6]-a[2]*a[4],b02=a[0]*a[7]-a[3]*a[4],b03=a[1]*a[6]-a[2]*a[5],
+        b04=a[1]*a[7]-a[3]*a[5],b05=a[2]*a[7]-a[3]*a[6],b06=a[8]*a[13]-a[9]*a[12],b07=a[8]*a[14]-a[10]*a[12],
+        b08=a[8]*a[15]-a[11]*a[12],b09=a[9]*a[14]-a[10]*a[13],b10=a[9]*a[15]-a[11]*a[13],b11=a[10]*a[15]-a[11]*a[14];
+  let d=b00*b11-b01*b10+b02*b09+b03*b08-b04*b07+b05*b06; if(!d)return m; d=1/d;
+  o[0]=(a[5]*b11-a[6]*b10+a[7]*b09)*d;o[1]=(a[2]*b10-a[1]*b11-a[3]*b09)*d;o[2]=(a[13]*b05-a[14]*b04+a[15]*b03)*d;o[3]=(a[10]*b04-a[9]*b05-a[11]*b03)*d;
+  o[4]=(a[6]*b08-a[4]*b11-a[7]*b07)*d;o[5]=(a[0]*b11-a[2]*b08+a[3]*b07)*d;o[6]=(a[14]*b02-a[12]*b05-a[15]*b01)*d;o[7]=(a[8]*b05-a[10]*b02+a[11]*b01)*d;
+  o[8]=(a[4]*b10-a[5]*b08+a[7]*b06)*d;o[9]=(a[1]*b08-a[0]*b10-a[3]*b06)*d;o[10]=(a[12]*b04-a[13]*b02+a[15]*b00)*d;o[11]=(a[9]*b02-a[8]*b04-a[11]*b00)*d;
+  o[12]=(a[5]*b07-a[4]*b09-a[6]*b06)*d;o[13]=(a[0]*b09-a[1]*b07+a[2]*b06)*d;o[14]=(a[13]*b01-a[12]*b03-a[14]*b00)*d;o[15]=(a[8]*b03-a[9]*b01+a[10]*b00)*d;
+  return o;}
+
+/* ===================== procedural noise (CPU) ===================== */
+function h2(x,y){let n=Math.sin(x*127.1+y*311.7)*43758.5453;return n-Math.floor(n);}
+function vnoise(x,y){const ix=Math.floor(x),iy=Math.floor(y);let fx=x-ix,fy=y-iy;
+  const sx=fx*fx*(3-2*fx),sy=fy*fy*(3-2*fy);
+  const a=h2(ix,iy),b=h2(ix+1,iy),c=h2(ix,iy+1),d=h2(ix+1,iy+1);
+  return (a+(b-a)*sx)+((c+(d-c)*sx)-(a+(b-a)*sx))*sy;}
+function fbm(x,y,oct=5){let s=0,a=.5,f=1;for(let i=0;i<oct;i++){s+=a*vnoise(x*f,y*f);f*=2.03;a*=.5;}return s;}
+
+const WORLD=260;                 // terrain extent (units, centered)
+function terrainH(x,z){
+  let h = fbm(x*0.008+11.3, z*0.008-4.7, 5)*26.0;
+  h += fbm(x*0.035-2.1, z*0.035+7.9, 4)*3.2;
+  h += fbm(x*0.12, z*0.12, 2)*0.5;
+  // gentle clearing around the spawn point so the player starts in open ground
+  const d=Math.hypot(x,z);
+  const flat=Math.max(0,1-Math.min(1,d/34));
+  h = h*(1-flat*0.82) + 6.0*flat*0.82;
+  return h-6.0;
+}
+function terrainN(x,z){const e=.6;
+  const hl=terrainH(x-e,z),hr=terrainH(x+e,z),hd=terrainH(x,z-e),hu=terrainH(x,z+e);
+  return V.norm([hl-hr,2*e,hd-hu]);}
+
+/* ===================== gl helpers ===================== */
+function sh(type,src){const s=gl.createShader(type);gl.shaderSource(s,src);gl.compileShader(s);
+  if(!gl.getShaderParameter(s,gl.COMPILE_STATUS))throw new Error(gl.getShaderInfoLog(s)+"\n"+src.split("\n").map((l,i)=>(i+1)+": "+l).join("\n"));return s;}
+function prog(vs,fs){const p=gl.createProgram();gl.attachShader(p,sh(gl.VERTEX_SHADER,vs));gl.attachShader(p,sh(gl.FRAGMENT_SHADER,fs));gl.linkProgram(p);
+  if(!gl.getProgramParameter(p,gl.LINK_STATUS))throw new Error(gl.getProgramInfoLog(p));
+  p.u=new Proxy({},{get:(t,k)=>{if(!(k in t))t[k]=gl.getUniformLocation(p,k);return t[k];}});return p;}
+function buf(data,target=gl.ARRAY_BUFFER){const b=gl.createBuffer();gl.bindBuffer(target,b);gl.bufferData(target,data,gl.STATIC_DRAW);return b;}
+function attr(p,name,b,size,divisor=0,stride=0,offset=0){const l=gl.getAttribLocation(p,name);if(l<0)return;
+  gl.bindBuffer(gl.ARRAY_BUFFER,b);gl.enableVertexAttribArray(l);gl.vertexAttribPointer(l,size,gl.FLOAT,false,stride,offset);gl.vertexAttribDivisor(l,divisor);}
+
+/* shared GLSL */
+const GLSL_COMMON=`
+float hash21(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
+float vnoise(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.0-2.0*f);
+  float a=hash21(i),b=hash21(i+vec2(1,0)),c=hash21(i+vec2(0,1)),d=hash21(i+vec2(1,1));
+  return mix(mix(a,b,f.x),mix(c,d,f.x),f.y);}
+float fbm(vec2 p){float s=0.0,a=0.5;for(int i=0;i<5;i++){s+=a*vnoise(p);p*=2.03;a*=0.5;}return s;}
+vec3 aces(vec3 x){return clamp((x*(2.51*x+0.03))/(x*(2.43*x+0.59)+0.14),0.0,1.0);}
+vec3 finish(vec3 c){return pow(aces(c),vec3(1.0/2.2));}
+`;
+const GLSL_FOG=`
+uniform vec3 uFogCol; uniform vec3 uHazeCol; uniform float uFogDensity; uniform vec3 uSunDir;
+vec3 applyFog(vec3 col, float dist, vec3 viewDir){
+  float f = 1.0 - exp(-pow(dist*uFogDensity,1.45));
+  float sun = pow(max(dot(viewDir,uSunDir),0.0),6.0);
+  vec3 fc = mix(uFogCol, uHazeCol, sun);
+  return mix(col, fc, clamp(f,0.0,1.0));
+}
+`;
+
+/* ===================== sky ===================== */
+const skyP=prog(`#version 300 es
+out vec2 vUv;
+void main(){vec2 p=vec2((gl_VertexID<<1)&2, gl_VertexID&2);vUv=p;gl_Position=vec4(p*2.0-1.0,1.0,1.0);}`,
+`#version 300 es
+precision highp float; in vec2 vUv; out vec4 o;
+uniform mat4 uInvVP; uniform vec3 uEye,uSunDir,uSunCol,uSkyTop,uSkyBot,uFogCol; uniform float uTime;
+${GLSL_COMMON}
+void main(){
+  vec4 p=uInvVP*vec4(vUv*2.0-1.0,1.0,1.0); vec3 rd=normalize(p.xyz/p.w-uEye);
+  float y=clamp(rd.y*1.15+0.02,-1.0,1.0);
+  vec3 col=mix(uSkyBot,uSkyTop,pow(clamp(y,0.0,1.0),0.62));
+  col=mix(uFogCol,col,smoothstep(-0.06,0.30,rd.y));      // horizon haze
+  float sd=max(dot(rd,uSunDir),0.0);
+  col+=uSunCol*(pow(sd,900.0)*9.0 + pow(sd,26.0)*0.55 + pow(sd,5.0)*0.12);
+  if(rd.y>0.005){                                         // soft drifting cloud sheet
+    vec2 uv=rd.xz/max(rd.y,0.005)*0.045+vec2(uTime*0.0035,uTime*0.0016);
+    float c=smoothstep(0.52,0.96,fbm(uv))*smoothstep(0.02,0.30,rd.y);
+    col=mix(col,mix(vec3(0.92,0.94,0.97),uSunCol*1.15,pow(sd,3.0)*0.5),c*0.62);
+  }
+  o=vec4(finish(col),1.0);
+}`);
+
+/* ===================== terrain ===================== */
+const terP=prog(`#version 300 es
+in vec3 aPos; in vec3 aNor; in float aShade;
+out vec3 vP; out vec3 vN; out float vShade;
+uniform mat4 uVP;
+void main(){vP=aPos;vN=aNor;vShade=aShade;gl_Position=uVP*vec4(aPos,1.0);}`,
+`#version 300 es
+precision highp float; in vec3 vP; in vec3 vN; in float vShade; out vec4 o;
+uniform vec3 uEye,uSunCol,uAmbTop,uAmbBot; uniform float uTime;
+${GLSL_COMMON}
+${GLSL_FOG}
+void main(){
+  vec3 N=normalize(vN);
+  float slope=1.0-N.y;
+  // layered ground: moss, dry earth, rock on steep faces
+  float n1=fbm(vP.xz*0.09), n2=fbm(vP.xz*0.45+31.0), n3=vnoise(vP.xz*3.1);
+  vec3 moss=mix(vec3(0.085,0.150,0.062), vec3(0.170,0.255,0.096), n1);
+  moss=mix(moss, vec3(0.232,0.290,0.120), smoothstep(0.45,0.85,n2)*0.55);
+  vec3 earth=mix(vec3(0.150,0.115,0.076), vec3(0.220,0.176,0.120), n2);
+  vec3 rock=mix(vec3(0.185,0.183,0.172), vec3(0.285,0.278,0.262), n3);
+  vec3 base=mix(moss,earth,smoothstep(0.06,0.22,slope)*0.75);
+  base=mix(base,rock,smoothstep(0.30,0.62,slope));
+  base*=0.82+0.30*n3;                                    // fine grain
+  float shade=clamp(vShade,0.0,1.0);
+  float ndl=max(dot(N,uSunDir),0.0);
+  vec3 amb=mix(uAmbBot,uAmbTop,N.y*0.5+0.5);
+  vec3 col=base*(amb*(0.55+0.45*(1.0-shade)) + uSunCol*ndl*(1.0-shade*0.94));
+  // dappled light filtering through the canopy
+  float dap=fbm(vP.xz*0.55+vec2(uTime*0.05,uTime*0.03));
+  col+=uSunCol*base*smoothstep(0.62,0.95,dap)*(1.0-shade)*ndl*0.55;
+  vec3 vd=normalize(vP-uEye);
+  o=vec4(finish(applyFog(col,length(vP-uEye),vd)),1.0);
+}`);
+
+/* ===================== trees (instanced) ===================== */
+const treeVS=`#version 300 es
+in vec3 aPos; in vec3 aNor; in float aSway;
+in vec3 iPos; in vec4 iRot;   // iRot = (cos,sin, scale, phase)
+in vec3 iTint;
+out vec3 vP; out vec3 vN; out vec3 vTint; out float vAo;
+uniform mat4 uVP; uniform float uTime; uniform float uWind;
+void main(){
+  float c=iRot.x, s=iRot.y, sc=iRot.z, ph=iRot.w;
+  vec3 p=aPos*sc;
+  vec3 n=aNor;
+  p=vec3(c*p.x+s*p.z, p.y, -s*p.x+c*p.z);
+  n=vec3(c*n.x+s*n.z, n.y, -s*n.x+c*n.z);
+  float t=uTime+ph*6.2831;
+  float amp=aSway*sc*uWind;
+  p.x+=sin(t*1.05+p.y*0.10)*amp*0.16 + sin(t*2.7+ph)*amp*0.05;
+  p.z+=cos(t*0.87+p.y*0.09)*amp*0.13;
+  vP=p+iPos; vN=normalize(n); vTint=iTint; vAo=clamp(aPos.y*0.06+0.12,0.0,1.0);
+  gl_Position=uVP*vec4(vP,1.0);
+}`;
+const trunkFS=`#version 300 es
+precision highp float; in vec3 vP; in vec3 vN; in vec3 vTint; in float vAo; out vec4 o;
+uniform vec3 uEye,uSunCol,uAmbTop,uAmbBot;
+${GLSL_COMMON}
+${GLSL_FOG}
+void main(){
+  vec3 N=normalize(vN);
+  float bark=fbm(vec2(atan(N.z,N.x)*3.4, vP.y*4.5))*0.55+vnoise(vec2(vP.y*22.0,0.0))*0.25;
+  vec3 base=mix(vec3(0.088,0.062,0.046), vec3(0.205,0.152,0.108), bark)*vTint;
+  float ndl=max(dot(N,uSunDir),0.0);
+  vec3 amb=mix(uAmbBot,uAmbTop,N.y*0.5+0.5);
+  vec3 col=base*(amb*(0.45+0.55*vAo)+uSunCol*ndl*0.85);
+  vec3 vd=normalize(vP-uEye);
+  o=vec4(finish(applyFog(col,length(vP-uEye),vd)),1.0);
+}`;
+const leafFS=`#version 300 es
+precision highp float; in vec3 vP; in vec3 vN; in vec3 vTint; in float vAo; out vec4 o;
+uniform vec3 uEye,uSunCol,uAmbTop,uAmbBot;
+${GLSL_COMMON}
+${GLSL_FOG}
+void main(){
+  vec3 N=normalize(vN);
+  float n=fbm(vP.xz*2.6+vP.y*1.7);
+  vec3 base=mix(vec3(0.045,0.108,0.055), vec3(0.135,0.255,0.110), n)*vTint;
+  float ndl=max(dot(N,uSunDir),0.0);
+  vec3 vd=normalize(vP-uEye);
+  float trans=pow(max(dot(vd,uSunDir),0.0),2.2)*0.75;   // light through needles
+  vec3 amb=mix(uAmbBot,uAmbTop,N.y*0.5+0.5);
+  vec3 col=base*(amb*(0.42+0.58*vAo)+uSunCol*ndl) + uSunCol*base*trans*1.7;
+  float rim=pow(1.0-max(dot(N,-vd),0.0),3.0);
+  col+=uSunCol*rim*0.12;
+  o=vec4(finish(applyFog(col,length(vP-uEye),vd)),1.0);
+}`;
+const trunkP=prog(treeVS,trunkFS), leafP=prog(treeVS,leafFS);
+
+/* ===================== grass (instanced blades) ===================== */
+const grassP=prog(`#version 300 es
+in vec2 aPos; in vec3 iPos; in vec3 iData;  // iData = (rot, height, phase)
+out vec3 vP; out float vT; out float vPh;
+uniform mat4 uVP; uniform float uTime; uniform float uWind;
+void main(){
+  float c=cos(iData.x), s=sin(iData.x);
+  float t=aPos.y;
+  float w=(1.0-t)*0.055;
+  vec3 p=vec3(aPos.x*w,t*iData.y,0.0);
+  float sw=(sin(uTime*1.9+iData.z*6.28+iPos.x*0.35)+0.4*sin(uTime*3.7+iPos.z*0.5))*t*t*0.30*uWind;
+  p.x+=sw; p.z+=sw*0.55;
+  p=vec3(c*p.x+s*p.z,p.y,-s*p.x+c*p.z);
+  vP=p+iPos; vT=t; vPh=iData.z;
+  gl_Position=uVP*vec4(vP,1.0);
+}`,
+`#version 300 es
+precision highp float; in vec3 vP; in float vT; in float vPh; out vec4 o;
+uniform vec3 uEye,uSunCol,uAmbTop,uAmbBot;
+${GLSL_COMMON}
+${GLSL_FOG}
+void main(){
+  vec3 base=mix(vec3(0.055,0.105,0.040), vec3(0.230,0.330,0.110), vT*0.85+vPh*0.22);
+  vec3 amb=mix(uAmbBot,uAmbTop,0.75);
+  vec3 col=base*(amb*(0.35+0.65*vT)+uSunCol*(0.35+0.65*vT)*0.85);
+  vec3 vd=normalize(vP-uEye);
+  col+=uSunCol*base*pow(max(dot(vd,uSunDir),0.0),3.0)*vT*1.1;
+  o=vec4(finish(applyFog(col,length(vP-uEye),vd)),1.0);
+}`);
+
+/* ===================== motes / fireflies ===================== */
+const moteP=prog(`#version 300 es
+in vec3 aPos; in vec2 aData;
+out float vGlow;
+uniform mat4 uVP; uniform float uTime; uniform vec3 uEye; uniform float uPx;
+void main(){
+  vec3 p=aPos;
+  p.x+=sin(uTime*0.45+aData.x*6.28)*2.6;
+  p.y+=sin(uTime*0.62+aData.x*3.14)*1.1;
+  p.z+=cos(uTime*0.38+aData.x*5.10)*2.6;
+  // wrap motes around the camera so the air always feels alive
+  p.xz = mod(p.xz-uEye.xz+40.0,80.0)-40.0+uEye.xz;
+  vGlow=aData.y*(0.45+0.55*sin(uTime*2.1+aData.x*12.0));
+  vec4 cp=uVP*vec4(p,1.0);
+  gl_Position=cp;
+  gl_PointSize=clamp(uPx*aData.y*7.0/max(cp.w,0.6),1.0,22.0);
+}`,
+`#version 300 es
+precision highp float; in float vGlow; out vec4 o; uniform vec3 uMoteCol;
+void main(){
+  vec2 d=gl_PointCoord-0.5; float r=length(d);
+  float a=smoothstep(0.5,0.0,r); a*=a;
+  o=vec4(uMoteCol*a*max(vGlow,0.0)*1.6, a*max(vGlow,0.0));
+}`);
+
+/* ===================== build terrain mesh ===================== */
+const SEG=192, STEP=WORLD*2/SEG;
+const tPos=new Float32Array((SEG+1)*(SEG+1)*3), tNor=new Float32Array((SEG+1)*(SEG+1)*3), tShade=new Float32Array((SEG+1)*(SEG+1));
+for(let j=0;j<=SEG;j++)for(let i=0;i<=SEG;i++){
+  const k=j*(SEG+1)+i, x=-WORLD+i*STEP, z=-WORLD+j*STEP, y=terrainH(x,z), n=terrainN(x,z);
+  tPos[k*3]=x;tPos[k*3+1]=y;tPos[k*3+2]=z; tNor[k*3]=n[0];tNor[k*3+1]=n[1];tNor[k*3+2]=n[2];
+}
+const idx=new Uint32Array(SEG*SEG*6);let ii=0;
+for(let j=0;j<SEG;j++)for(let i=0;i<SEG;i++){const a=j*(SEG+1)+i,b=a+1,c=a+SEG+1,d=c+1;
+  idx[ii++]=a;idx[ii++]=c;idx[ii++]=b; idx[ii++]=b;idx[ii++]=c;idx[ii++]=d;}
+
+/* ===================== place trees ===================== */
+let seed=1337; const rnd=()=>{seed=(seed*1664525+1013904223)>>>0;return seed/4294967296;};
+const trees=[];
+for(let i=0;i<7000 && trees.length<1500;i++){
+  const x=(rnd()*2-1)*(WORLD-14), z=(rnd()*2-1)*(WORLD-14);
+  const d=Math.hypot(x,z); if(d<11) continue;
+  const dens=fbm(x*0.012+50.0,z*0.012-20.0,4);
+  if(dens<0.40+rnd()*0.22) continue;                 // natural clearings
+  const n=terrainN(x,z); if(n[1]<0.86) continue;      // no trees on cliffs
+  const y=terrainH(x,z);
+  const sc=0.75+rnd()*0.95 + (d>110?0.25:0);
+  const a=rnd()*Math.PI*2;
+  trees.push({x,y,z,sc,a,tint:0.78+rnd()*0.44,ph:rnd()});
+}
+/* bake soft shadow / occlusion from trees into terrain vertices */
+const CELL=12, grid=new Map();
+const key=(a,b)=>a+","+b;
+for(const t of trees){const k=key(Math.floor(t.x/CELL),Math.floor(t.z/CELL));
+  (grid.get(k)||grid.set(k,[]).get(k)).push(t);}
+for(let k=0;k<tShade.length;k++){
+  const x=tPos[k*3],z=tPos[k*3+2];let s=0;
+  const ci=Math.floor(x/CELL),cj=Math.floor(z/CELL);
+  for(let a=-1;a<=1;a++)for(let b=-1;b<=1;b++){
+    const arr=grid.get(key(ci+a,cj+b)); if(!arr)continue;
+    for(const t of arr){const dx=x-(t.x-2.6*t.sc),dz=z-(t.z+1.4*t.sc),r=t.sc*4.2;
+      const d2=(dx*dx+dz*dz)/(r*r); if(d2<3.2) s+=Math.exp(-d2)*0.62;}
+  }
+  tShade[k]=Math.min(0.92,s);
+}
+
+/* ===================== tree geometry ===================== */
+function trunkGeo(){
+  const P=[],N=[],S=[],I=[];const RINGS=[[0,1.0],[2.2,.72],[4.6,.52],[7.2,.36],[9.6,.2]],SEGN=9;
+  for(let r=0;r<RINGS.length;r++){const[y,rad]=RINGS[r];
+    for(let s=0;s<=SEGN;s++){const a=s/SEGN*Math.PI*2, w=0.46*rad*(1+0.14*Math.sin(a*3.0+r));
+      P.push(Math.cos(a)*w,y,Math.sin(a)*w); N.push(Math.cos(a),0.16,Math.sin(a)); S.push(y/10);}}
+  for(let r=0;r<RINGS.length-1;r++)for(let s=0;s<SEGN;s++){
+    const a=r*(SEGN+1)+s,b=a+1,c=a+SEGN+1,d=c+1; I.push(a,c,b,b,c,d);}
+  return{P:new Float32Array(P),N:new Float32Array(N),S:new Float32Array(S),I:new Uint16Array(I)};
+}
+function leafGeo(){
+  const P=[],N=[],S=[],I=[];const SEGN=10;
+  const TIERS=[[4.2,3.5,4.6],[6.9,2.85,4.2],[9.3,2.05,3.6],[11.4,1.25,2.8]];
+  for(const[base,rad,hgt] of TIERS){
+    const o=P.length/3;
+    P.push(0,base+hgt,0);N.push(0,1,0);S.push((base+hgt)/12);
+    for(let s=0;s<=SEGN;s++){const a=s/SEGN*Math.PI*2;
+      const jag=0.80+0.34*Math.abs(Math.sin(a*4.0));
+      P.push(Math.cos(a)*rad*jag, base-0.35, Math.sin(a)*rad*jag);
+      N.push(Math.cos(a)*0.72,0.52,Math.sin(a)*0.72); S.push(base/12);}
+    for(let s=1;s<=SEGN;s++) I.push(o,o+s,o+s+1);
+  }
+  return{P:new Float32Array(P),N:new Float32Array(N),S:new Float32Array(S),I:new Uint16Array(I)};
+}
+
+/* ===================== grass instances ===================== */
+const GRASS=26000, gPos=new Float32Array(GRASS*3), gData=new Float32Array(GRASS*3);
+{let n=0;while(n<GRASS){const x=(rnd()*2-1)*46,z=(rnd()*2-1)*46;const nr=terrainN(x,z);
+  if(nr[1]<0.80){continue;}
+  gPos[n*3]=x;gPos[n*3+1]=terrainH(x,z)-0.05;gPos[n*3+2]=z;
+  gData[n*3]=rnd()*3.14;gData[n*3+1]=0.38+rnd()*0.72;gData[n*3+2]=rnd();n++;}}
+const bladeQuad=new Float32Array([-1,0, 1,0, -1,.5, 1,0, 1,.5, -1,.5, -1,.5, 1,.5, -0.25,1]);
+
+/* ===================== motes ===================== */
+const MOTES=900,mPos=new Float32Array(MOTES*3),mData=new Float32Array(MOTES*2);
+for(let i=0;i<MOTES;i++){const x=(rnd()*2-1)*40,z=(rnd()*2-1)*40;
+  mPos[i*3]=x;mPos[i*3+1]=terrainH(x,z)+0.6+rnd()*7.5;mPos[i*3+2]=z;
+  mData[i*2]=rnd();mData[i*2+1]=0.35+rnd()*0.65;}
+
+/* ===================== upload ===================== */
+const tg=trunkGeo(), lg=leafGeo();
+const B={
+  tPos:buf(tPos), tNor:buf(tNor), tShade:buf(tShade),
+  tIdx:buf(idx,gl.ELEMENT_ARRAY_BUFFER),
+  trP:buf(tg.P),trN:buf(tg.N),trS:buf(tg.S),trI:buf(tg.I,gl.ELEMENT_ARRAY_BUFFER),
+  lfP:buf(lg.P),lfN:buf(lg.N),lfS:buf(lg.S),lfI:buf(lg.I,gl.ELEMENT_ARRAY_BUFFER),
+  gQ:buf(bladeQuad),gP:buf(gPos),gD:buf(gData),
+  mP:buf(mPos),mD:buf(mData)
+};
+const iPos=new Float32Array(trees.length*3),iRot=new Float32Array(trees.length*4),iTint=new Float32Array(trees.length*3);
+trees.forEach((t,i)=>{iPos[i*3]=t.x;iPos[i*3+1]=t.y;iPos[i*3+2]=t.z;
+  iRot[i*4]=Math.cos(t.a);iRot[i*4+1]=Math.sin(t.a);iRot[i*4+2]=t.sc;iRot[i*4+3]=t.ph;
+  iTint[i*3]=t.tint;iTint[i*3+1]=t.tint*(0.92+0.16*((i*37)%7)/7);iTint[i*3+2]=t.tint*0.95;});
+B.iPos=buf(iPos);B.iRot=buf(iRot);B.iTint=buf(iTint);
+
+/* VAOs */
+function vao(fn){const v=gl.createVertexArray();gl.bindVertexArray(v);fn();gl.bindVertexArray(null);return v;}
+const vTerrain=vao(()=>{attr(terP,"aPos",B.tPos,3);attr(terP,"aNor",B.tNor,3);attr(terP,"aShade",B.tShade,1);gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,B.tIdx);});
+const vTrunk=vao(()=>{attr(trunkP,"aPos",B.trP,3);attr(trunkP,"aNor",B.trN,3);attr(trunkP,"aSway",B.trS,1);
+  attr(trunkP,"iPos",B.iPos,3,1);attr(trunkP,"iRot",B.iRot,4,1);attr(trunkP,"iTint",B.iTint,3,1);gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,B.trI);});
+const vLeaf=vao(()=>{attr(leafP,"aPos",B.lfP,3);attr(leafP,"aNor",B.lfN,3);attr(leafP,"aSway",B.lfS,1);
+  attr(leafP,"iPos",B.iPos,3,1);attr(leafP,"iRot",B.iRot,4,1);attr(leafP,"iTint",B.iTint,3,1);gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,B.lfI);});
+const vGrass=vao(()=>{attr(grassP,"aPos",B.gQ,2);attr(grassP,"iPos",B.gP,3,1);attr(grassP,"iData",B.gD,3,1);});
+const vMote=vao(()=>{attr(moteP,"aPos",B.mP,3);attr(moteP,"aData",B.mD,2);});
+
+/* ===================== looks ===================== */
+const LOOKS={
+  dawn:{sun:V.norm([0.42,0.16,-0.86]),sunCol:[1.35,1.02,0.78],skyTop:[0.28,0.42,0.62],skyBot:[0.78,0.72,0.66],
+        fog:[0.66,0.70,0.72],haze:[0.95,0.86,0.74],dens:0.0165,ambTop:[0.30,0.38,0.48],ambBot:[0.10,0.12,0.11],mote:[0.85,0.92,1.0],wind:0.75},
+  noon:{sun:V.norm([0.36,0.80,-0.48]),sunCol:[1.62,1.52,1.28],skyTop:[0.20,0.40,0.78],skyBot:[0.62,0.76,0.90],
+        fog:[0.56,0.66,0.70],haze:[0.92,0.93,0.86],dens:0.0092,ambTop:[0.34,0.44,0.56],ambBot:[0.09,0.13,0.08],mote:[1.0,0.99,0.86],wind:1.0},
+  dusk:{sun:V.norm([-0.62,0.13,0.72]),sunCol:[1.85,0.96,0.52],skyTop:[0.14,0.20,0.40],skyBot:[0.92,0.52,0.30],
+        fog:[0.40,0.34,0.36],haze:[1.0,0.62,0.34],dens:0.0150,ambTop:[0.22,0.24,0.38],ambBot:[0.07,0.07,0.09],mote:[1.0,0.82,0.42],wind:0.6}
+};
+let look={...LOOKS.noon}, target={...LOOKS.noon};
+function lerpArr(a,b,t){return a.map((v,i)=>v+(b[i]-v)*t);}
+function stepLook(t){
+  for(const k of["sun","sunCol","skyTop","skyBot","fog","haze","ambTop","ambBot","mote"]) look[k]=lerpArr(look[k],target[k],t);
+  look.dens+=(target.dens-look.dens)*t; look.wind+=(target.wind-look.wind)*t;
+  look.sun=V.norm(look.sun);
+}
+
+/* ===================== camera & input ===================== */
+const player={x:0,y:0,z:26,vy:0,yaw:Math.PI,pitch:-0.04,ground:true,bob:0};
+const keys=new Set();
+let pointerLocked=false, running=false;
+addEventListener("keydown",e=>{ if(["Space","ArrowUp","ArrowDown"].includes(e.code))e.preventDefault(); keys.add(e.code); },{passive:false});
+addEventListener("keyup",e=>keys.delete(e.code));
+addEventListener("blur",()=>keys.clear());
+canvas.addEventListener("click",()=>{ if(running && !pointerLocked) canvas.requestPointerLock(); });
+document.addEventListener("pointerlockchange",()=>{pointerLocked=document.pointerLockElement===canvas;});
+document.addEventListener("mousemove",e=>{ if(!pointerLocked)return;
+  player.yaw-=e.movementX*0.0022; player.pitch-=e.movementY*0.0020;
+  player.pitch=Math.max(-1.35,Math.min(1.35,player.pitch));});
+
+/* touch look + move (mobile) */
+const isTouch=matchMedia("(pointer:coarse)").matches;
+let tMove={x:0,y:0}, moveId=null, lookId=null, lastLook=null;
+if(isTouch){
+  document.getElementById("touch").classList.add("on");
+  const el=document.getElementById("touch");
+  el.addEventListener("touchstart",e=>{for(const t of e.changedTouches){
+    if(t.clientX<innerWidth/2&&moveId===null){moveId=t.identifier;tMove.ox=t.clientX;tMove.oy=t.clientY;}
+    else if(lookId===null){lookId=t.identifier;lastLook={x:t.clientX,y:t.clientY};}}},{passive:true});
+  el.addEventListener("touchmove",e=>{for(const t of e.changedTouches){
+    if(t.identifier===moveId){tMove.x=Math.max(-1,Math.min(1,(t.clientX-tMove.ox)/60));tMove.y=Math.max(-1,Math.min(1,(t.clientY-tMove.oy)/60));}
+    else if(t.identifier===lookId&&lastLook){player.yaw-=(t.clientX-lastLook.x)*0.006;player.pitch=Math.max(-1.3,Math.min(1.3,player.pitch-(t.clientY-lastLook.y)*0.005));lastLook={x:t.clientX,y:t.clientY};}}},{passive:true});
+  el.addEventListener("touchend",e=>{for(const t of e.changedTouches){
+    if(t.identifier===moveId){moveId=null;tMove.x=tMove.y=0;} else if(t.identifier===lookId){lookId=null;lastLook=null;}}},{passive:true});
+}
+
+/* ===================== UI ===================== */
+const intro=document.getElementById("intro"),hud=document.getElementById("hud"),
+      cross=document.getElementById("crosshair"),fpsEl=document.getElementById("fps");
+document.getElementById("start").addEventListener("click",()=>{
+  intro.classList.add("hidden"); hud.classList.add("on"); cross.classList.add("on"); fpsEl.classList.add("on");
+  running=true; if(!isTouch) canvas.requestPointerLock();
+});
+document.querySelectorAll(".chip").forEach(c=>c.addEventListener("click",()=>{
+  document.querySelectorAll(".chip").forEach(o=>o.setAttribute("aria-pressed",String(o===c)));
+  target={...LOOKS[c.dataset.time]};
+}));
+
+/* ===================== resize ===================== */
+let W=0,H=0,DPR=1;
+function resize(){DPR=Math.min(devicePixelRatio||1,isTouch?1.5:2);
+  W=canvas.clientWidth;H=canvas.clientHeight;
+  canvas.width=Math.round(W*DPR);canvas.height=Math.round(H*DPR);
+  gl.viewport(0,0,canvas.width,canvas.height);}
+addEventListener("resize",resize);resize();
+
+/* ===================== render loop ===================== */
+gl.enable(gl.DEPTH_TEST);gl.enable(gl.CULL_FACE);gl.cullFace(gl.BACK);
+let last=performance.now(),tAcc=0,fAcc=0,fCount=0;
+
+function setCommon(p){
+  gl.uniform3fv(p.u.uSunDir,look.sun);gl.uniform3fv(p.u.uSunCol,look.sunCol);
+  gl.uniform3fv(p.u.uAmbTop,look.ambTop);gl.uniform3fv(p.u.uAmbBot,look.ambBot);
+  gl.uniform3fv(p.u.uFogCol,look.fog);gl.uniform3fv(p.u.uHazeCol,look.haze);
+  gl.uniform1f(p.u.uFogDensity,look.dens);
+}
+
+function frame(now){
+  const dt=Math.min(0.05,(now-last)/1000);last=now;tAcc+=dt;
+  fAcc+=dt;fCount++;if(fAcc>0.5){fpsEl.textContent=Math.round(fCount/fAcc)+" fps";fAcc=0;fCount=0;}
+  stepLook(1-Math.pow(0.001,dt));
+
+  /* movement */
+  const sprint=keys.has("ShiftLeft")||keys.has("ShiftRight");
+  const spd=(sprint?9.4:4.6);
+  let fwd=(keys.has("KeyW")||keys.has("ArrowUp")?1:0)-(keys.has("KeyS")||keys.has("ArrowDown")?1:0);
+  let str=(keys.has("KeyD")||keys.has("ArrowRight")?1:0)-(keys.has("KeyA")||keys.has("ArrowLeft")?1:0);
+  if(isTouch){fwd-=tMove.y;str+=tMove.x;}
+  const m=Math.hypot(fwd,str)||1; fwd/=m; str/=m;
+  const sy=Math.sin(player.yaw),cy=Math.cos(player.yaw);
+  const moving=(Math.abs(fwd)+Math.abs(str))>0.05;
+  if(running){
+    player.x+=(-sy*fwd+cy*str)*spd*dt;
+    player.z+=(-cy*fwd-sy*str)*spd*dt;
+    const lim=WORLD-18;
+    player.x=Math.max(-lim,Math.min(lim,player.x));player.z=Math.max(-lim,Math.min(lim,player.z));
+  }
+  const gh=terrainH(player.x,player.z);
+  if(player.ground&&keys.has("Space")){player.vy=5.0;player.ground=false;}
+  player.vy-=16.5*dt; player.y+=player.vy*dt;
+  if(player.y<=gh){player.y=gh;player.vy=0;player.ground=true;}
+  player.bob+=dt*(sprint?13.5:8.6)*(moving&&player.ground?1:0);
+  const bob=moving&&player.ground?Math.sin(player.bob)*(sprint?0.085:0.05):0;
+  const roll=moving&&player.ground?Math.cos(player.bob*0.5)*0.012:0;
+
+  const eye=[player.x,player.y+1.72+bob,player.z];
+  const dir=[-sy*Math.cos(player.pitch),Math.sin(player.pitch),-cy*Math.cos(player.pitch)];
+  const ctr=[eye[0]+dir[0],eye[1]+dir[1],eye[2]+dir[2]];
+  const proj=perspective((sprint&&moving?78:72)*Math.PI/180,Math.max(W/H,0.35),0.1,700);
+  const view=lookAt(eye,ctr,[Math.sin(roll),Math.cos(roll),0]);
+  const VP=mul(proj,view);
+
+  gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
+
+  /* sky */
+  gl.depthMask(false);gl.disable(gl.DEPTH_TEST);gl.useProgram(skyP);
+  gl.uniformMatrix4fv(skyP.u.uInvVP,false,inv(VP));
+  gl.uniform3fv(skyP.u.uEye,eye);gl.uniform3fv(skyP.u.uSunDir,look.sun);gl.uniform3fv(skyP.u.uSunCol,look.sunCol);
+  gl.uniform3fv(skyP.u.uSkyTop,look.skyTop);gl.uniform3fv(skyP.u.uSkyBot,look.skyBot);gl.uniform3fv(skyP.u.uFogCol,look.fog);
+  gl.uniform1f(skyP.u.uTime,tAcc);
+  gl.drawArrays(gl.TRIANGLES,0,3);
+  gl.enable(gl.DEPTH_TEST);gl.depthMask(true);
+
+  /* terrain */
+  gl.useProgram(terP);gl.uniformMatrix4fv(terP.u.uVP,false,VP);gl.uniform3fv(terP.u.uEye,eye);
+  gl.uniform1f(terP.u.uTime,tAcc);setCommon(terP);
+  gl.bindVertexArray(vTerrain);gl.drawElements(gl.TRIANGLES,idx.length,gl.UNSIGNED_INT,0);
+
+  /* grass (double sided) */
+  gl.disable(gl.CULL_FACE);
+  gl.useProgram(grassP);gl.uniformMatrix4fv(grassP.u.uVP,false,VP);gl.uniform3fv(grassP.u.uEye,eye);
+  gl.uniform1f(grassP.u.uTime,tAcc);gl.uniform1f(grassP.u.uWind,look.wind);setCommon(grassP);
+  gl.bindVertexArray(vGrass);gl.drawArraysInstanced(gl.TRIANGLES,0,9,GRASS);
+
+  /* trees */
+  gl.useProgram(trunkP);gl.uniformMatrix4fv(trunkP.u.uVP,false,VP);gl.uniform3fv(trunkP.u.uEye,eye);
+  gl.uniform1f(trunkP.u.uTime,tAcc);gl.uniform1f(trunkP.u.uWind,look.wind);setCommon(trunkP);
+  gl.bindVertexArray(vTrunk);gl.drawElementsInstanced(gl.TRIANGLES,tg.I.length,gl.UNSIGNED_SHORT,0,trees.length);
+
+  gl.useProgram(leafP);gl.uniformMatrix4fv(leafP.u.uVP,false,VP);gl.uniform3fv(leafP.u.uEye,eye);
+  gl.uniform1f(leafP.u.uTime,tAcc);gl.uniform1f(leafP.u.uWind,look.wind);setCommon(leafP);
+  gl.bindVertexArray(vLeaf);gl.drawElementsInstanced(gl.TRIANGLES,lg.I.length,gl.UNSIGNED_SHORT,0,trees.length);
+  gl.enable(gl.CULL_FACE);
+
+  /* motes */
+  gl.enable(gl.BLEND);gl.blendFunc(gl.SRC_ALPHA,gl.ONE);gl.depthMask(false);
+  gl.useProgram(moteP);gl.uniformMatrix4fv(moteP.u.uVP,false,VP);gl.uniform1f(moteP.u.uTime,tAcc);
+  gl.uniform3fv(moteP.u.uEye,eye);gl.uniform3fv(moteP.u.uMoteCol,look.mote);gl.uniform1f(moteP.u.uPx,DPR*H/900*2.2);
+  gl.bindVertexArray(vMote);gl.drawArrays(gl.POINTS,0,MOTES);
+  gl.depthMask(true);gl.disable(gl.BLEND);
+  gl.bindVertexArray(null);
+
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
