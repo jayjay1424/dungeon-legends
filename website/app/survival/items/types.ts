@@ -62,3 +62,5 @@ export const RARITY_COLORS: Record<ItemRarity, string> = {
   Legendary: "#fbbf24",
   Mythic: "#f43f5e",
 };
+
+export type { EquipmentState } from "./equipmentSystem";

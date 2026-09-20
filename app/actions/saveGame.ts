@@ -33,7 +33,7 @@ export type PlayerSave = {
   inventory: InventoryEntry[];
   equipment: EquipmentState;
   gold: number;
-  stats: PlayerStats;
+  stats: PlayerStats | null;
 };
 
 // ── Load ──────────────────────────────────────────────────────────────────────

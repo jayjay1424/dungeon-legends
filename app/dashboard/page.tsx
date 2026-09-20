@@ -42,10 +42,12 @@ export default function Dashboard() {
             setPlayerName(email.split("@")[0] ?? "Adventurer");
           }
         });
-        setLevel(save.stats.level);
-        setHp(`${Math.round(save.stats.hp)} / ${save.stats.maxHp}`);
-        setAtk(String(save.stats.attack));
-        setDef(String(save.stats.defense));
+        if (save.stats) {
+          setLevel(save.stats.level);
+          setHp(`${Math.round(save.stats.hp)} / ${save.stats.maxHp}`);
+          setAtk(String(save.stats.attack));
+          setDef(String(save.stats.defense));
+        }
       })
       .catch(() => {
         // Failed to load — show placeholders

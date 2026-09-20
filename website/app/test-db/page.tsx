@@ -1,6 +1,8 @@
 import { supabase } from "@/lib/supabase";
 import Link from "next/link";
 
+export const dynamic = "force-dynamic";
+
 export default async function TestDB() {
   const { data, error } = await supabase.from("test").select("*");
 
