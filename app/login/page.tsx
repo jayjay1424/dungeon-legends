@@ -37,7 +37,8 @@ export default function LoginPage() {
 
     // Rate limit check: is this email locked out?
     const { data: locked, error: lockErr } = await supabase
-      .rpc("is_account_locked", { p_email: email.trim() });
+      .rpc("is_account_locked", { p_email: email.trim() })
+      .catch(() => ({}));
     if (!lockErr && locked === true) {
       setMessage("Too many failed attempts. Please wait 15 minutes before trying again.");
       setLoading(false);
