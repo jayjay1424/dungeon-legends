@@ -35,16 +35,36 @@ export default function LoginPage() {
 
     const supabase = createClient();
 
+    // Rate limit check: is this email locked out?
+    const { data: locked, error: lockErr } = await supabase
+      .rpc("is_account_locked", { p_email: email.trim() });
+    if (!lockErr && locked === true) {
+      setMessage("Too many failed attempts. Please wait 15 minutes before trying again.");
+      setLoading(false);
+      return;
+    }
+
     const { error } = await supabase.auth.signInWithPassword({
       email: email.trim(),
       password,
     });
 
     if (error) {
+      // Record failed attempt server-side
+      await supabase.rpc("record_login_attempt", {
+        p_email: email.trim(),
+        p_success: false,
+      }).catch(() => {});
       setMessage(error.message);
       setLoading(false);
       return;
     }
+
+    // Record successful login
+    await supabase.rpc("record_login_attempt", {
+      p_email: email.trim(),
+      p_success: true,
+    }).catch(() => {});
 
     router.push("/dashboard");
   }

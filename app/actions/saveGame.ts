@@ -47,13 +47,27 @@ export async function loadPlayerSave(): Promise<PlayerSave | null> {
 
   if (!user) return null;
 
+  // Check if account is locked due to too many failed login attempts
+  const { data: lockCheck, error: lockError } = await supabase
+    .rpc("is_account_locked", { p_email: user.email ?? "" });
+
+  if (!lockError && lockCheck === true) {
+    throw new Error("Account temporarily locked due to too many failed login attempts. Please try again later.");
+  }
+
   const { data, error } = await supabase
     .from("player_saves")
-    .select("inventory, equipment, gold, stats")
+    .select("inventory, equipment, gold, stats, data_hash")
     .eq("user_id", user.id)
     .single();
 
   if (error || !data) return null;
+
+  // Integrity check: if data_hash is missing, save may have been tampered with
+  // Server will re-compute hash on next save
+  if (!data.data_hash) {
+    console.warn(`Save for user ${user.id} has no integrity hash. Re-computing on next save.`);
+  }
 
   return {
     inventory: (data.inventory as InventoryEntry[]) ?? [],
@@ -74,6 +88,7 @@ export async function savePlayerSave(save: PlayerSave): Promise<boolean> {
 
   if (!user) return false;
 
+  // Server-side hash computation via DB trigger — client cannot fake it
   const { error } = await supabase
     .from("player_saves")
     .upsert(
@@ -83,6 +98,7 @@ export async function savePlayerSave(save: PlayerSave): Promise<boolean> {
         equipment: save.equipment,
         gold: save.gold,
         stats: save.stats,
+        // data_hash is NOT provided — DB trigger computes it server-side
       },
       { onConflict: "user_id" }
     );
