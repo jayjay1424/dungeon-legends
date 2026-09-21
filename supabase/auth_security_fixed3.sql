@@ -1,123 +1,168 @@
--- Dungeon Legends — Auth Security: Rate Limiting & Integrity
+-- Dungeon Legends — Auth Security: Rate Limiting & Integrity (FIXED)
 -- Run in Supabase SQL editor
+-- Fixes: search_path, digest() qualification, missing trigger function, grants
+
+BEGIN;
 
 -- ── 1. Login attempt tracking (rate limiting) ──────────────────────────
-create table if not exists login_attempts (
-  id          bigserial primary key,
-  email       text    not null,
-  success     boolean not null default false,
-  created_at  timestamptz not null default now()
+CREATE TABLE IF NOT EXISTS login_attempts (
+  id          BIGSERIAL PRIMARY KEY,
+  email       TEXT    NOT NULL,
+  success     BOOLEAN NOT NULL DEFAULT FALSE,
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-create index if not exists idx_login_attempts_email_created
-  on login_attempts (email, created_at);
+CREATE INDEX IF NOT EXISTS idx_login_attempts_email_created
+  ON login_attempts (email, created_at);
 
 -- Helper: count failed attempts in last 15 minutes
-create or replace function count_failed_logins(p_email text)
-returns integer as $$
-declare
-  cnt integer;
-begin
-  select count(*) into cnt
-  from login_attempts
-  where email = p_email
-    and success = false
-    and created_at > now() - interval '15 minutes';
-  return cnt;
-end;
-$$ language plpgsql security definer;
+CREATE OR REPLACE FUNCTION count_failed_logins(p_email TEXT)
+RETURNS INTEGER AS $$
+DECLARE
+  cnt INTEGER;
+BEGIN
+  SELECT COUNT(*) INTO cnt
+  FROM login_attempts
+  WHERE email = p_email
+    AND success = FALSE
+    AND created_at > NOW() - INTERVAL '15 minutes';
+  RETURN cnt;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER
+SET search_path = public, extensions;
 
 -- Helper: record a login attempt
-create or replace function record_login_attempt(p_email text, p_success boolean)
-returns void as $$
-begin
-  insert into login_attempts (email, success)
-  values (p_email, p_success);
-end;
-$$ language plpgsql security definer;
+CREATE OR REPLACE FUNCTION record_login_attempt(p_email TEXT, p_success BOOLEAN)
+RETURNS VOID AS $$
+BEGIN
+  INSERT INTO login_attempts (email, success)
+  VALUES (p_email, p_success);
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER
+SET search_path = public, extensions;
 
 -- Helper: check if account is temporarily locked
-create or replace function is_account_locked(p_email text)
-returns boolean as $$
-declare
-  failed_cnt integer;
-begin
+CREATE OR REPLACE FUNCTION is_account_locked(p_email TEXT)
+RETURNS BOOLEAN AS $$
+DECLARE
+  failed_cnt INTEGER;
+BEGIN
   failed_cnt := count_failed_logins(p_email);
-  return failed_cnt >= 5;  -- lock after 5 failed attempts in 15 min
-end;
-$$ language plpgsql security definer;
+  RETURN failed_cnt >= 5;  -- lock after 5 failed attempts in 15 min
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER
+SET search_path = public, extensions;
 
 -- ── 2. Save data integrity ──────────────────────────────────────────────
-alter table player_saves
-  add column if not exists data_hash text;
+ALTER TABLE player_saves
+  ADD COLUMN IF NOT EXISTS data_hash TEXT;
 
-create or replace function compute_save_hash(
-  p_inventory jsonb,
-  p_equipment jsonb,
-  p_gold      integer,
-  p_stats     jsonb
-) returns text as $$
-begin
-  return encode(digest(
-    jsonb_build_object(
-      'inv', p_inventory,
-      'equip', p_equipment,
-      'gold', p_gold,
-      'stats', p_stats
-    )::text,
-    'sha256'
-  ), 'hex');
-end;
-$$ language plpgsql security definer;
+-- Compute hash for save data (qualified with pgcrypto.)
+CREATE OR REPLACE FUNCTION compute_save_hash(
+  p_inventory JSONB,
+  p_equipment JSONB,
+  p_gold      INTEGER,
+  p_stats     JSONB
+) RETURNS TEXT AS $$
+BEGIN
+  RETURN ENCODE(
+    PGCRYPTO.DIGEST(
+      JSONB_BUILD_OBJECT(
+        'inv', p_inventory,
+        'equip', p_equipment,
+        'gold', p_gold,
+        'stats', p_stats
+      )::TEXT,
+      'sha256'
+    ),
+    'hex'
+  );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER
+SET search_path = public, extensions;
 
-drop trigger if exists trg_compute_save_hash on player_saves;
-create trigger trg_compute_save_hash
-  before insert or update on player_saves
-  for each row
-  execute function set_save_hash();
+-- The trigger function that set_save_hash() calls
+CREATE OR REPLACE FUNCTION set_save_hash()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.data_hash := compute_save_hash(
+    NEW.inventory,
+    NEW.equipment,
+    NEW.gold,
+    NEW.stats
+  );
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER
+SET search_path = public, extensions;
+
+-- Drop and recreate trigger (idempotent)
+DROP TRIGGER IF EXISTS trg_compute_save_hash ON player_saves;
+CREATE TRIGGER trg_compute_save_hash
+  BEFORE INSERT OR UPDATE ON player_saves
+  FOR EACH ROW
+  EXECUTE FUNCTION set_save_hash();
 
 -- ── 3. Updated RLS policies ──────────────────────────────────────────────
-drop policy if exists "users can view own save";
-create policy "users can view own save" on player_saves
-  for select using (
-    auth.uid() = user_id
-  );
+DROP POLICY IF EXISTS "users can view own save" ON player_saves;
+CREATE POLICY "users can view own save" ON player_saves
+  FOR SELECT USING (auth.uid() = user_id);
 
-drop policy if exists "users can insert own save";
-create policy "users can insert own save" on player_saves
-  for insert with check (auth.uid() = user_id);
+DROP POLICY IF EXISTS "users can insert own save" ON player_saves;
+CREATE POLICY "users can insert own save" ON player_saves
+  FOR INSERT WITH CHECK (auth.uid() = user_id);
 
-drop policy if exists "users can update own save";
-create policy "users can update own save" on player_saves
-  for update using (auth.uid() = user_id)
-  with check (auth.uid() = user_id);
+DROP POLICY IF EXISTS "users can update own save" ON player_saves;
+CREATE POLICY "users can update own save" ON player_saves
+  FOR UPDATE USING (auth.uid() = user_id)
+  WITH CHECK (auth.uid() = user_id);
 
-drop policy if exists "users can delete own save";
-create policy "users can delete own save" on player_saves
-  for delete using (auth.uid() = user_id);
+DROP POLICY IF EXISTS "users can delete own save" ON player_saves;
+CREATE POLICY "users can delete own save" ON player_saves
+  FOR DELETE USING (auth.uid() = user_id);
 
 -- ── 4. Email confirmation enforcement ───────────────────────────────────
-create or replace function has_confirmed_email(p_user_id uuid)
-returns boolean as $$
-declare
-  email_confirmed boolean;
-begin
-  select email_confirmed into email_confirmed
-  from auth.users
-  where id = p_user_id;
-  return email_confirmed;
-end;
-$$ language plpgsql security definer;
+CREATE OR REPLACE FUNCTION has_confirmed_email(p_user_id UUID)
+RETURNS BOOLEAN AS $$
+DECLARE
+  email_confirmed BOOLEAN;
+BEGIN
+  SELECT email_confirmed INTO email_confirmed
+  FROM auth.users
+  WHERE id = p_user_id;
+  RETURN email_confirmed;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER
+SET search_path = public, extensions;
 
 -- ── 5. Username sanitization ────────────────────────────────────────────
-create or replace function sanitize_username()
-returns text as $$
-begin
-  return regexp_replace(
+CREATE OR REPLACE FUNCTION sanitize_username()
+RETURNS TEXT AS $$
+BEGIN
+  RETURN REGEXP_REPLACE(
     $1,
     '<[^>]*>',
     '',
     'g'
   );
-end;
-$$ language plpgsql security definer;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER
+SET search_path = public, extensions;
+
+-- ── 6. Grants for browser RPC calls ─────────────────────────────────────
+-- Allow authenticated users to call rate-limit functions via RPC
+GRANT EXECUTE ON FUNCTION is_account_locked(TEXT) TO authenticated;
+GRANT EXECUTE ON FUNCTION record_login_attempt(TEXT, BOOLEAN) TO authenticated;
+GRANT EXECUTE ON FUNCTION count_failed_logins(TEXT) TO authenticated;
+
+-- Also grant compute_save_hash for server-side integrity checks
+GRANT EXECUTE ON FUNCTION compute_save_hash(JSONB, JSONB, INTEGER, JSONB) TO authenticated;
+
+-- ── 7. RLS on login_attempts (internal table, no client access) ─────────
+ALTER TABLE login_attempts ENABLE ROW LEVEL SECURITY;
+
+-- Revoke direct table access (the recording function still works via security definer)
+REVOKE ALL ON login_attempts FROM PUBLIC;
+REVOKE ALL ON login_attempts FROM authenticated;
+
+COMMIT;
