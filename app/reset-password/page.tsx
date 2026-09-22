@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { createClient } from "@/utils/supabase/client";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import styles from "./reset-password.module.css";
 import DungeonBackdrop from "../components/DungeonBackdrop";
 import { startLoginMusic, stopLoginMusic } from "../survival/audio";
@@ -15,11 +16,46 @@ export default function ResetPassword() {
   const [message, setMessage] = useState("");
   const [isSuccess, setIsSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [isInvalidToken, setIsInvalidToken] = useState(false);
 
   useEffect(() => {
     const startAudio = () => startLoginMusic();
     startAudio();
     window.addEventListener("pointerdown", startAudio, { once: true });
+
+    // 1. Check for error parameters in query string or URL hash
+    const searchParams = new URLSearchParams(window.location.search);
+    const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+    const errDesc =
+      searchParams.get("error_description") ||
+      hashParams.get("error_description") ||
+      searchParams.get("error") ||
+      hashParams.get("error");
+
+    if (errDesc) {
+      setIsInvalidToken(true);
+      setMessage(
+        "This reset link is invalid or has expired. Please request a new password reset."
+      );
+      return () => {
+        window.removeEventListener("pointerdown", startAudio);
+        stopLoginMusic();
+      };
+    }
+
+    // 2. Exchange code if present directly in URL (PKCE fallback)
+    const code = searchParams.get("code");
+    const supabase = createClient();
+
+    if (code) {
+      supabase.auth.exchangeCodeForSession(code).then(({ error }) => {
+        if (error) {
+          setIsInvalidToken(true);
+          setMessage("Reset link expired or invalid: " + error.message);
+        }
+      });
+    }
+
     return () => {
       window.removeEventListener("pointerdown", startAudio);
       stopLoginMusic();
@@ -99,6 +135,40 @@ export default function ResetPassword() {
             {message}
           </p>
         ) : null}
+
+        {isInvalidToken ? (
+          <div style={{ marginTop: "16px", textAlign: "center" }}>
+            <Link
+              href="/forgot-password"
+              className={styles.peekButton}
+              style={{
+                display: "inline-block",
+                padding: "8px 16px",
+                textDecoration: "none",
+                color: "#ffcd75",
+                background: "rgba(255, 205, 117, 0.15)",
+                border: "1px solid #ffcd75",
+                borderRadius: "4px",
+                fontSize: "0.8rem",
+              }}
+            >
+              Request New Link
+            </Link>
+          </div>
+        ) : null}
+
+        <div style={{ marginTop: "16px", textAlign: "center" }}>
+          <Link
+            href="/login"
+            style={{
+              color: "#9ca3af",
+              fontSize: "0.75rem",
+              textDecoration: "underline",
+            }}
+          >
+            Back to login
+          </Link>
+        </div>
 
         <p className={styles.footer}>PRESS START TO CONTINUE</p>
       </div>

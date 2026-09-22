@@ -22,6 +22,16 @@ export default function LoginPage() {
     startAudio();
     window.addEventListener("pointerdown", startAudio, { once: true });
 
+    // Check URL parameters for messages or errors (e.g. from auth callback)
+    const params = new URLSearchParams(window.location.search);
+    const urlError = params.get("error_description") || params.get("error");
+    const urlMessage = params.get("message");
+    if (urlError) {
+      setMessage(decodeURIComponent(urlError.replace(/\+/g, " ")));
+    } else if (urlMessage) {
+      setMessage(decodeURIComponent(urlMessage.replace(/\+/g, " ")));
+    }
+
     // Check if user already has an active session
     const supabase = createClient();
     supabase.auth.getSession().then(({ data }) => {

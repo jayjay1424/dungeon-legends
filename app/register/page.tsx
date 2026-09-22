@@ -39,10 +39,16 @@ export default function RegisterPage() {
 
     const supabase = createClient();
 
-    // 1. Create Auth Account
+    // 1. Create Auth Account with user metadata and callback redirect
     const { data: authData, error: authError } = await supabase.auth.signUp({
       email: email.trim(),
       password,
+      options: {
+        data: {
+          username: username.trim(),
+        },
+        emailRedirectTo: `${window.location.origin}/auth/callback?next=/dashboard`,
+      },
     });
 
     if (authError) {
@@ -55,47 +61,49 @@ export default function RegisterPage() {
     const session = authData.session;
 
     if (!user) {
-      setMessage("User creation failed");
+      setMessage("User creation failed. Please try again.");
       setLoading(false);
       return;
     }
 
-    // Check if user is authenticated
+    // Check if user is authenticated immediately (when email confirmation is turned off)
     if (!session) {
       setIsSuccess(true);
-      setMessage("Account created. Please confirm your email before continuing.");
+      setMessage("Account created! Please check your email to confirm your hero before logging in.");
       setLoading(false);
       return;
     }
 
-    // 2. Create Profile
-    const { error: profileError } = await supabase.from("profiles").insert({
-      id: user.id,
-      username: username.trim(),
-    });
-
-    if (profileError) {
-      setMessage(profileError.message);
-      setLoading(false);
-      return;
+    // 2. Ensure Profile exists (handles case where DB trigger already ran)
+    try {
+      await supabase.from("profiles").upsert(
+        {
+          id: user.id,
+          username: username.trim(),
+        },
+        { onConflict: "id" }
+      );
+    } catch {
+      // Non-blocking: DB trigger on_auth_user_created already populates this
     }
 
-    // 3. Create Player Stats
-    const { error: statsError } = await supabase.from("player_stats").insert({
-      id: user.id,
-      hunter_level: 1,
-      experience: 0,
-      coins: 0,
-    });
-
-    if (statsError) {
-      setMessage(statsError.message);
-      setLoading(false);
-      return;
+    // 3. Ensure Player Stats exist
+    try {
+      await supabase.from("player_stats").upsert(
+        {
+          id: user.id,
+          hunter_level: 1,
+          experience: 0,
+          coins: 0,
+        },
+        { onConflict: "id" }
+      );
+    } catch {
+      // Non-blocking: DB trigger on_auth_user_created already populates this
     }
 
-    // Success
-    router.push("/dashboard");
+    // Hard redirect guarantees newly written auth cookies sync with middleware
+    window.location.href = "/dashboard";
   }
 
   const hasError = message.length > 0 && !isSuccess;

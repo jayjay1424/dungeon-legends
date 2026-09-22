@@ -32,15 +32,17 @@ export default function ForgotPassword() {
 
     const supabase = createClient();
 
+    const redirectUrl = `${window.location.origin}/auth/callback?next=/reset-password`;
+
     const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
-      redirectTo: `${window.location.origin}/reset-password`,
+      redirectTo: redirectUrl,
     });
 
     if (error) {
       setMessage(error.message);
     } else {
       setIsSuccess(true);
-      setMessage("Check your Gmail for the password reset link.");
+      setMessage("Check your email for the password reset link!");
     }
 
     setLoading(false);
