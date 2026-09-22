@@ -44,7 +44,7 @@ export default function Lobby({ mode, onJoin, currentSessionId }: LobbyProps) {
         <p style={{ margin: "0 0 6px", color: "#a08050", fontSize: "0.65rem" }}>CREATE:</p>
         <div style={{ display: "flex", gap: 6 }}>
           <select value={maxP} onChange={e => setMaxP(Number(e.target.value))} style={{ background: "#1a1a2e", color: "#ffcd75", border: "1px solid #3a3f58", borderRadius: 4, padding: "4px", fontSize: "0.65rem" }}>
-            {[2,4,8,12,16].map(n => <option key={n} value={n}>{n}</button>)}
+            {[2,4,8,12,16].map(n => <option key={n} value={n}>{n}</option>)}
           </select>
           <button onClick={create} disabled={creating} style={{ background: "#ffcd75", color: "#1a1a2e", border: "none", borderRadius: 4, padding: "5px 10px", cursor: creating ? "wait" : "pointer", fontSize: "0.65rem", fontWeight: "bold" }}>{creating ? "..." : "CREATE+JOIN"}</button>
         </div>

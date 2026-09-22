@@ -21,6 +21,15 @@ export default function LoginPage() {
     const startAudio = () => startLoginMusic();
     startAudio();
     window.addEventListener("pointerdown", startAudio, { once: true });
+
+    // Check if user already has an active session
+    const supabase = createClient();
+    supabase.auth.getSession().then(({ data }) => {
+      if (data?.session) {
+        window.location.href = "/dashboard";
+      }
+    });
+
     return () => {
       window.removeEventListener("pointerdown", startAudio);
       stopLoginMusic();
@@ -33,41 +42,27 @@ export default function LoginPage() {
     setLoading(true);
     setMessage("");
 
-    const supabase = createClient();
+    try {
+      const supabase = createClient();
 
-    // Rate limit check: is this email locked out?
-    const { data: locked, error: lockErr } = await supabase
-      .rpc("is_account_locked", { p_email: email.trim() })
-      .catch(() => ({}));
-    if (!lockErr && locked === true) {
-      setMessage("Too many failed attempts. Please wait 15 minutes before trying again.");
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: email.trim(),
+        password,
+      });
+
+      if (error) {
+        setMessage(error.message);
+        setLoading(false);
+        return;
+      }
+
+      // Hard redirect guarantees newly written auth cookies are sent to middleware
+      window.location.href = "/dashboard";
+    } catch (err: unknown) {
+      const errMsg = err instanceof Error ? err.message : "An unexpected error occurred during login.";
+      setMessage(errMsg);
       setLoading(false);
-      return;
     }
-
-    const { error } = await supabase.auth.signInWithPassword({
-      email: email.trim(),
-      password,
-    });
-
-    if (error) {
-      // Record failed attempt server-side
-      await supabase.rpc("record_login_attempt", {
-        p_email: email.trim(),
-        p_success: false,
-      }).catch(() => {});
-      setMessage(error.message);
-      setLoading(false);
-      return;
-    }
-
-    // Record successful login
-    await supabase.rpc("record_login_attempt", {
-      p_email: email.trim(),
-      p_success: true,
-    }).catch(() => {});
-
-    router.push("/dashboard");
   }
 
   const hasError = message.length > 0;

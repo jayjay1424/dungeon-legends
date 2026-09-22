@@ -1,6 +1,5 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
-import { createBrowserClient, createServerClient } from '@supabase/ssr';
-import { cookies } from 'next/headers';
+import { createClient } from '@/utils/supabase/client';
 
 export type GameMode = 'survival' | 'defence' | 'hunt';
 
@@ -27,24 +26,9 @@ export interface SessionPlayer {
   joined_at: string;
 }
 
-// ── Server-side client (for SSR) ──────────────────────────────────────────────
-export async function getMultiplayerClient() {
-  const cookieStore = await cookies();
-  return createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() { return cookieStore.getAll(); },
-        setAll(cookiesToSet) {
-          try {
-            cookiesToSet.forEach(({ name, value, options }) =>
-              cookieStore.set(name, value, options));
-          } catch {}
-        },
-      },
-    }
-  );
+// ── Multiplayer client ─────────────────────────────────────────────────────────
+export function getMultiplayerClient() {
+  return createClient();
 }
 
 // ── Hook: get active sessions for a mode ─────────────────────────────────────
@@ -127,10 +111,7 @@ export function useRealtimeSessions(mode: GameMode, enabled = true) {
   useEffect(() => {
     if (!enabled) return;
 
-    const supabase = createBrowserClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    );
+    const supabase = getMultiplayerClient();
 
     // Subscribe to session changes
     const sessionChannel = supabase
