@@ -73,7 +73,9 @@ export default function InGameChat({
       style={{
         position: "absolute",
         left: 14,
-        bottom: 74,
+        // On mobile with controls: push the chat up above the joystick area (220px),
+        // on desktop keep it near the bottom (74px)
+        bottom: "clamp(74px, 14vw + 120px, 240px)",
         zIndex: 10000000,
         fontFamily: 'var(--font-pixel), "Press Start 2P", monospace',
         display: "flex",
@@ -227,6 +229,7 @@ export default function InGameChat({
               placeholder="Say something..."
               value={inputVal}
               onChange={(e) => setInputVal(e.target.value)}
+              data-chat-input="true"
               style={{
                 flex: 1,
                 background: "#0f0a1e",

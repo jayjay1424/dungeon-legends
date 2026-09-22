@@ -1085,45 +1085,88 @@ export default function SurvivalPage() {
           >
             👥 FRIENDS
           </button>
+          {/* Public Server button — only when not in a room */}
+          {!roomId && (
+            <button
+              type="button"
+              onClick={() => {
+                const publicRoomId = "public-survival-1";
+                setRoomId(publicRoomId);
+                const url = new URL(window.location.href);
+                url.searchParams.set("room", publicRoomId);
+                window.history.replaceState({}, "", url.toString());
+                setLootMessage("🌍 JOINED PUBLIC SERVER!");
+              }}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 4,
+                background: "rgba(34, 197, 94, 0.2)",
+                border: "2px solid #4ade80",
+                padding: "3px 8px",
+                fontSize: "0.58rem",
+                color: "#86efac",
+                cursor: "pointer",
+                fontFamily: "inherit",
+                boxShadow: "0 0 8px rgba(74, 222, 128, 0.2)",
+              }}
+              title="Join the shared public server visible to everyone"
+            >
+              🌍 PUBLIC
+            </button>
+          )}
           {roomId && (
             <div
               style={{
                 display: "flex",
                 alignItems: "center",
                 gap: 8,
-                background: "rgba(14, 116, 144, 0.25)",
-                border: "2px solid #38bdf8",
+                background: roomId === "public-survival-1"
+                  ? "rgba(34, 197, 94, 0.2)"
+                  : "rgba(14, 116, 144, 0.25)",
+                border: roomId === "public-survival-1"
+                  ? "2px solid #4ade80"
+                  : "2px solid #38bdf8",
                 padding: "3px 8px",
                 fontSize: "0.58rem",
-                color: "#38bdf8",
+                color: roomId === "public-survival-1" ? "#86efac" : "#38bdf8",
                 boxShadow: "0 0 10px rgba(56, 189, 248, 0.3)",
               }}
             >
-              <span>⚔️ ROOM: {roomId.length > 8 ? `${roomId.substring(0, 8)}...` : roomId}</span>
+              <span>
+                {roomId === "public-survival-1"
+                  ? "🌍 PUBLIC SERVER"
+                  : `⚔️ ROOM: ${roomId.length > 8 ? `${roomId.substring(0, 8)}...` : roomId}`}
+              </span>
               <span style={{ color: "#a5f3fc" }}>👥 {roomPlayerCount} ONLINE</span>
-              <button
-                type="button"
-                onClick={() => {
-                  navigator.clipboard.writeText(window.location.href);
-                  setLootMessage("ROOM INVITE LINK COPIED!");
-                }}
-                style={{
-                  background: "#0284c7",
-                  border: "1px solid #38bdf8",
-                  color: "#fff",
-                  padding: "2px 6px",
-                  cursor: "pointer",
-                  fontFamily: "inherit",
-                  fontSize: "0.52rem",
-                }}
-                title="Copy Invite Link to share with friends"
-              >
-                COPY LINK
-              </button>
+              {roomId !== "public-survival-1" && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    navigator.clipboard.writeText(window.location.href);
+                    setLootMessage("ROOM INVITE LINK COPIED!");
+                  }}
+                  style={{
+                    background: "#0284c7",
+                    border: "1px solid #38bdf8",
+                    color: "#fff",
+                    padding: "2px 6px",
+                    cursor: "pointer",
+                    fontFamily: "inherit",
+                    fontSize: "0.52rem",
+                  }}
+                  title="Copy Invite Link to share with friends"
+                >
+                  COPY LINK
+                </button>
+              )}
               <button
                 type="button"
                 onClick={() => {
                   setRoomId(null);
+                  const url = new URL(window.location.href);
+                  url.searchParams.delete("room");
+                  window.history.replaceState({}, "", url.toString());
                   router.push("/survival");
                 }}
                 style={{
@@ -2369,6 +2412,11 @@ export default function SurvivalPage() {
         onSpin={handleMobileSpin}
         onClones={handleMobileClones}
         onFlash={handleMobileFlash}
+        onOpenChat={() => {
+          // Focus the chat input if InGameChat is rendered
+          const chatInput = document.querySelector<HTMLInputElement>('[data-chat-input]');
+          if (chatInput) chatInput.focus();
+        }}
       />
 
       {/* Social Friends Modal */}

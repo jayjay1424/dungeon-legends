@@ -93,13 +93,16 @@ export function initMultiplayerRoom({
   const channelName = `room:${roomId}`;
   const channel = supabase.channel(channelName, {
     config: {
-      broadcast: { self: false },
+      broadcast: { self: false, ack: false },
       presence: { key: localUser.id },
     },
   });
 
   let lastBroadcastAt = 0;
   const BROADCAST_INTERVAL_MS = 50; // 20 Hz update rate for ultra-smooth movement
+
+  // Keep channel alive with a heartbeat every 5s
+  let heartbeatTimer: ReturnType<typeof setInterval> | null = null;
 
   channel
     .on("broadcast", { event: "pos" }, (event) => {
@@ -167,10 +170,19 @@ export function initMultiplayerRoom({
       }
       onChatMessage?.(msg);
     })
+    .on("broadcast", { event: "ping" }, () => {
+      // Heartbeat pong — keeps Supabase Realtime from closing idle connections
+    })
     .on("presence", { event: "sync" }, () => {
       const state = channel.presenceState();
       const count = Object.keys(state).length;
       onPlayerCountChange?.(count);
+    })
+    .on("presence", { event: "join" }, ({ newPresences }) => {
+      // When a new player joins, re-broadcast our current count
+      const state = channel.presenceState();
+      onPlayerCountChange?.(Object.keys(state).length);
+      void newPresences; // used for side-effect only
     })
     .on("presence", { event: "leave" }, ({ leftPresences }) => {
       if (Array.isArray(leftPresences)) {
@@ -192,12 +204,24 @@ export function initMultiplayerRoom({
     })
     .subscribe(async (status) => {
       if (status === "SUBSCRIBED") {
+        // Track our presence so other clients know we're here
         await channel.track({
           id: localUser.id,
           name: localUser.name,
           level: localUser.level,
           joinedAt: new Date().toISOString(),
         });
+
+        // Start heartbeat to keep channel alive
+        heartbeatTimer = setInterval(() => {
+          channel.send({ type: "broadcast", event: "ping", payload: { id: localUser.id } });
+        }, 5000);
+      } else if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
+        // Clear heartbeat on error so it restarts on reconnect
+        if (heartbeatTimer) {
+          clearInterval(heartbeatTimer);
+          heartbeatTimer = null;
+        }
       }
     });
 
@@ -250,6 +274,10 @@ export function initMultiplayerRoom({
 
   const leaveRoom = () => {
     try {
+      if (heartbeatTimer) {
+        clearInterval(heartbeatTimer);
+        heartbeatTimer = null;
+      }
       channel.untrack();
       supabase.removeChannel(channel);
     } catch {

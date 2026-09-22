@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 interface MobileControlsProps {
   onDirectionChange: (dx: number, dy: number) => void;
@@ -9,6 +9,7 @@ interface MobileControlsProps {
   onSpin: () => void;
   onClones: () => void;
   onFlash: () => void;
+  onOpenChat?: () => void;
 }
 
 export default function MobileControls({
@@ -18,8 +19,15 @@ export default function MobileControls({
   onSpin,
   onClones,
   onFlash,
+  onOpenChat,
 }: MobileControlsProps) {
   const [isMobile, setIsMobile] = useState(false);
+  const joystickRef = useRef<HTMLDivElement>(null);
+  const knobRef = useRef<HTMLDivElement>(null);
+  const activePointerRef = useRef<number | null>(null);
+  const joystickCenterRef = useRef({ x: 0, y: 0 });
+  const currentDirRef = useRef({ x: 0, y: 0 });
+  const joystickActiveRef = useRef(false);
 
   useEffect(() => {
     const checkTouch = () => {
@@ -35,8 +43,6 @@ export default function MobileControls({
     return () => window.removeEventListener("resize", checkTouch);
   }, []);
 
-  if (!isMobile) return null;
-
   const triggerHaptic = (ms = 12) => {
     try {
       if (typeof navigator !== "undefined" && navigator.vibrate) {
@@ -47,10 +53,52 @@ export default function MobileControls({
     }
   };
 
-  const handlePad = (dx: number, dy: number) => {
-    triggerHaptic(8);
-    onDirectionChange(dx, dy);
+  // Analog joystick handlers
+  const JOYSTICK_RADIUS = 70;
+
+  const onJoystickStart = (clientX: number, clientY: number, pointerId?: number) => {
+    const el = joystickRef.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    joystickCenterRef.current = {
+      x: rect.left + rect.width / 2,
+      y: rect.top + rect.height / 2,
+    };
+    joystickActiveRef.current = true;
+    if (pointerId !== undefined) activePointerRef.current = pointerId;
+    updateJoystick(clientX, clientY);
   };
+
+  const updateJoystick = (clientX: number, clientY: number) => {
+    const center = joystickCenterRef.current;
+    let dx = clientX - center.x;
+    let dy = clientY - center.y;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    if (dist > JOYSTICK_RADIUS) {
+      dx = (dx / dist) * JOYSTICK_RADIUS;
+      dy = (dy / dist) * JOYSTICK_RADIUS;
+    }
+    // Move knob
+    if (knobRef.current) {
+      knobRef.current.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
+    }
+    const ndx = dist > 8 ? dx / JOYSTICK_RADIUS : 0;
+    const ndy = dist > 8 ? dy / JOYSTICK_RADIUS : 0;
+    currentDirRef.current = { x: ndx, y: ndy };
+    onDirectionChange(ndx, ndy);
+  };
+
+  const onJoystickEnd = () => {
+    joystickActiveRef.current = false;
+    activePointerRef.current = null;
+    if (knobRef.current) {
+      knobRef.current.style.transform = `translate(-50%, -50%)`;
+    }
+    currentDirRef.current = { x: 0, y: 0 };
+    onDirectionChange(0, 0);
+  };
+
+  if (!isMobile) return null;
 
   return (
     <div
@@ -64,130 +112,120 @@ export default function MobileControls({
         touchAction: "none",
       }}
     >
-      {/* ── Virtual D-Pad (Bottom-Left) ── */}
+      {/* ── Analog Joystick (Bottom-Left) ── */}
       <div
+        ref={joystickRef}
+        onTouchStart={(e) => {
+          e.preventDefault();
+          const touch = e.changedTouches[0];
+          onJoystickStart(touch.clientX, touch.clientY, touch.identifier);
+        }}
+        onTouchMove={(e) => {
+          e.preventDefault();
+          for (let i = 0; i < e.changedTouches.length; i++) {
+            const t = e.changedTouches[i];
+            if (activePointerRef.current === null || t.identifier === activePointerRef.current) {
+              updateJoystick(t.clientX, t.clientY);
+              break;
+            }
+          }
+        }}
+        onTouchEnd={(e) => {
+          e.preventDefault();
+          onJoystickEnd();
+        }}
+        onTouchCancel={(e) => {
+          e.preventDefault();
+          onJoystickEnd();
+        }}
         style={{
           position: "absolute",
-          left: 16,
-          bottom: 24,
-          width: 140,
-          height: 140,
+          left: 20,
+          bottom: 28,
+          width: 160,
+          height: 160,
+          borderRadius: "50%",
+          background: "rgba(15, 10, 30, 0.6)",
+          border: "3px solid rgba(255, 205, 117, 0.3)",
+          boxShadow: "0 0 0 2px rgba(0,0,0,0.5), inset 0 0 20px rgba(0,0,0,0.4)",
           pointerEvents: "auto",
-          display: "grid",
-          gridTemplateColumns: "repeat(3, 1fr)",
-          gridTemplateRows: "repeat(3, 1fr)",
-          gap: 3,
+          touchAction: "none",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
         }}
       >
-        <div />
-        {/* UP */}
-        <button
-          type="button"
-          onTouchStart={(e) => {
-            e.preventDefault();
-            handlePad(0, -1);
-          }}
-          onTouchEnd={(e) => {
-            e.preventDefault();
-            handlePad(0, 0);
-          }}
-          onMouseDown={() => handlePad(0, -1)}
-          onMouseUp={() => handlePad(0, 0)}
-          style={dpadButtonStyle}
-          aria-label="Move Up"
-        >
-          ▲
-        </button>
-        <div />
-
-        {/* LEFT */}
-        <button
-          type="button"
-          onTouchStart={(e) => {
-            e.preventDefault();
-            handlePad(-1, 0);
-          }}
-          onTouchEnd={(e) => {
-            e.preventDefault();
-            handlePad(0, 0);
-          }}
-          onMouseDown={() => handlePad(-1, 0)}
-          onMouseUp={() => handlePad(0, 0)}
-          style={dpadButtonStyle}
-          aria-label="Move Left"
-        >
-          ◀
-        </button>
-
-        {/* CENTER PIVOT */}
+        {/* Knob */}
         <div
+          ref={knobRef}
           style={{
-            display: "grid",
-            placeItems: "center",
-            background: "rgba(15, 10, 30, 0.75)",
-            border: "2px solid #3a3f58",
-            color: "#6b7280",
-            fontSize: "10px",
+            position: "absolute",
+            left: "50%",
+            top: "50%",
+            transform: "translate(-50%, -50%)",
+            width: 64,
+            height: 64,
+            borderRadius: "50%",
+            background: "radial-gradient(circle at 35% 35%, rgba(255, 205, 117, 0.9), rgba(120, 80, 20, 0.9))",
+            border: "3px solid #ffcd75",
+            boxShadow: "0 4px 12px rgba(0,0,0,0.8), 0 0 8px rgba(255,205,117,0.3)",
+            pointerEvents: "none",
+            transition: "transform 0s",
           }}
-        >
-          ●
+        />
+        {/* Cross lines indicator */}
+        <div style={{ position: "absolute", inset: 0, pointerEvents: "none", opacity: 0.15 }}>
+          <div style={{ position: "absolute", top: "50%", left: 12, right: 12, height: 1, background: "#ffcd75", transform: "translateY(-50%)" }} />
+          <div style={{ position: "absolute", left: "50%", top: 12, bottom: 12, width: 1, background: "#ffcd75", transform: "translateX(-50%)" }} />
         </div>
-
-        {/* RIGHT */}
-        <button
-          type="button"
-          onTouchStart={(e) => {
-            e.preventDefault();
-            handlePad(1, 0);
-          }}
-          onTouchEnd={(e) => {
-            e.preventDefault();
-            handlePad(0, 0);
-          }}
-          onMouseDown={() => handlePad(1, 0)}
-          onMouseUp={() => handlePad(0, 0)}
-          style={dpadButtonStyle}
-          aria-label="Move Right"
-        >
-          ▶
-        </button>
-
-        <div />
-        {/* DOWN */}
-        <button
-          type="button"
-          onTouchStart={(e) => {
-            e.preventDefault();
-            handlePad(0, 1);
-          }}
-          onTouchEnd={(e) => {
-            e.preventDefault();
-            handlePad(0, 0);
-          }}
-          onMouseDown={() => handlePad(0, 1)}
-          onMouseUp={() => handlePad(0, 0)}
-          style={dpadButtonStyle}
-          aria-label="Move Down"
-        >
-          ▼
-        </button>
-        <div />
       </div>
+
+      {/* ── Chat Button (Top-Right of game area) ── */}
+      <button
+        type="button"
+        onTouchStart={(e) => {
+          e.preventDefault();
+          triggerHaptic(10);
+          onOpenChat?.();
+        }}
+        style={{
+          position: "absolute",
+          top: 12,
+          right: 12,
+          width: 44,
+          height: 44,
+          borderRadius: "50%",
+          background: "rgba(24, 20, 37, 0.9)",
+          border: "2px solid #38bdf8",
+          color: "#38bdf8",
+          fontSize: "1.1rem",
+          display: "grid",
+          placeItems: "center",
+          pointerEvents: "auto",
+          touchAction: "none",
+          boxShadow: "0 3px 0 rgba(0,0,0,0.7), 0 0 8px rgba(56,189,248,0.2)",
+          cursor: "pointer",
+        }}
+        aria-label="Open Chat"
+      >
+        💬
+      </button>
 
       {/* ── Action Buttons Cluster (Bottom-Right) ── */}
       <div
         style={{
           position: "absolute",
           right: 16,
-          bottom: 20,
+          bottom: 28,
           pointerEvents: "auto",
           display: "flex",
+          flexDirection: "column",
           alignItems: "flex-end",
           gap: 10,
         }}
       >
-        {/* Skills Column */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 8, alignItems: "center" }}>
+        {/* Top skill row */}
+        <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
           {/* Flash */}
           <button
             type="button"
@@ -196,11 +234,11 @@ export default function MobileControls({
               triggerHaptic(15);
               onFlash();
             }}
-            style={smallSkillStyle("#a855f7")}
+            style={skillBtn("#a855f7", 52)}
             aria-label="Flash Skill"
           >
             ⚡
-            <small style={badgeStyle}>R</small>
+            <small style={badge}>R</small>
           </button>
 
           {/* Clones */}
@@ -211,11 +249,11 @@ export default function MobileControls({
               triggerHaptic(15);
               onClones();
             }}
-            style={smallSkillStyle("#38bdf8")}
+            style={skillBtn("#38bdf8", 52)}
             aria-label="Clones Skill"
           >
             👥
-            <small style={badgeStyle}>E</small>
+            <small style={badge}>E</small>
           </button>
 
           {/* Spin */}
@@ -226,16 +264,16 @@ export default function MobileControls({
               triggerHaptic(15);
               onSpin();
             }}
-            style={smallSkillStyle("#eab308")}
+            style={skillBtn("#eab308", 52)}
             aria-label="Spin Skill"
           >
             🌀
-            <small style={badgeStyle}>Q</small>
+            <small style={badge}>Q</small>
           </button>
         </div>
 
-        {/* Big Action Buttons */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 10, alignItems: "center" }}>
+        {/* Bottom action row: Dodge + Attack */}
+        <div style={{ display: "flex", gap: 12, alignItems: "flex-end" }}>
           {/* Dodge */}
           <button
             type="button"
@@ -244,41 +282,32 @@ export default function MobileControls({
               triggerHaptic(15);
               onDodge();
             }}
-            style={{
-              ...actionBtnStyle,
-              width: 52,
-              height: 52,
-              background: "#0284c7",
-              borderColor: "#38bdf8",
-              fontSize: "1.1rem",
-            }}
+            style={skillBtn("#38bdf8", 62)}
             aria-label="Dodge Dash"
           >
             💨
-            <small style={badgeStyle}>SHIFT</small>
+            <small style={badge}>SHIFT</small>
           </button>
 
-          {/* Primary Attack (Extra Large) */}
+          {/* Primary Attack */}
           <button
             type="button"
             onTouchStart={(e) => {
               e.preventDefault();
-              triggerHaptic(20);
+              triggerHaptic(25);
               onAttack();
             }}
             style={{
-              ...actionBtnStyle,
-              width: 68,
-              height: 68,
+              ...skillBtn("#ffcd75", 80),
               background: "#b13434",
               borderColor: "#ffcd75",
-              fontSize: "1.5rem",
-              boxShadow: "0 6px 0 #5a1111, 0 8px 16px rgba(0,0,0,0.6)",
+              boxShadow: "0 6px 0 #5a1111, 0 8px 16px rgba(0,0,0,0.6), 0 0 12px rgba(255,205,117,0.2)",
+              fontSize: "1.6rem",
             }}
             aria-label="Sword Attack"
           >
             ⚔️
-            <small style={badgeStyle}>ATK</small>
+            <small style={badge}>ATK</small>
           </button>
         </div>
       </div>
@@ -286,49 +315,32 @@ export default function MobileControls({
   );
 }
 
-const dpadButtonStyle: React.CSSProperties = {
-  background: "rgba(24, 20, 37, 0.92)",
-  border: "2px solid #ffcd75",
-  color: "#ffcd75",
-  fontSize: "14px",
-  display: "grid",
-  placeItems: "center",
-  cursor: "pointer",
-  boxShadow: "0 3px 0 rgba(0,0,0,0.6)",
-  touchAction: "none",
-};
-
-const actionBtnStyle: React.CSSProperties = {
+const skillBtn = (borderColor: string, size: number): React.CSSProperties => ({
+  width: size,
+  height: size,
   borderRadius: "50%",
-  border: "3px solid #ffcd75",
+  background: "rgba(24, 20, 37, 0.92)",
+  border: `3px solid ${borderColor}`,
+  color: "#fff",
+  fontSize: "1.2rem",
   display: "grid",
   placeItems: "center",
-  color: "#fff",
-  cursor: "pointer",
   position: "relative",
+  cursor: "pointer",
   touchAction: "none",
-  fontFamily: "inherit",
-};
-
-const smallSkillStyle = (borderColor: string): React.CSSProperties => ({
-  ...actionBtnStyle,
-  width: 48,
-  height: 48,
-  background: "rgba(24, 20, 37, 0.95)",
-  borderColor: borderColor,
-  fontSize: "1.1rem",
-  boxShadow: `0 3px 0 rgba(0,0,0,0.7), 0 0 8px ${borderColor}44`,
+  fontFamily: 'var(--font-pixel), "Press Start 2P", monospace',
+  boxShadow: `0 4px 0 rgba(0,0,0,0.7), 0 0 10px ${borderColor}33`,
 });
 
-const badgeStyle: React.CSSProperties = {
+const badge: React.CSSProperties = {
   position: "absolute",
-  bottom: -2,
-  right: -2,
+  bottom: -3,
+  right: -3,
   background: "#0f0a1e",
   border: "1px solid #3a3f58",
   color: "#a0a5c0",
-  fontSize: "0.42rem",
+  fontSize: "0.4rem",
   padding: "1px 3px",
   borderRadius: 2,
+  lineHeight: 1.2,
 };
-

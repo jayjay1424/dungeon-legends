@@ -266,6 +266,23 @@ const InfiniteArena = forwardRef<ArenaHandle, ArenaProps>(function InfiniteArena
   const mpHandleRef = useRef<MultiplayerRoomHandle | null>(null);
   const remotePlayersRef = useRef<Map<string, RemotePlayerEntity>>(new Map());
 
+  // Keep localUser in a ref so the room closure always reads the latest values
+  // even when playerInfo resolves asynchronously after the room starts.
+  const localUserRef = useRef({
+    id: playerInfo?.id ?? "local",
+    name: playerInfo?.name ?? "Adventurer",
+    level: playerInfo?.level ?? playerLevel ?? 1,
+  });
+  useEffect(() => {
+    if (playerInfo?.id && playerInfo.id !== "local") {
+      localUserRef.current = {
+        id: playerInfo.id,
+        name: playerInfo.name ?? "Adventurer",
+        level: playerInfo.level ?? playerLevel ?? 1,
+      };
+    }
+  }, [playerInfo?.id, playerInfo?.name, playerInfo?.level, playerLevel]);
+
   useEffect(() => {
     if (!roomId) {
       if (mpHandleRef.current) {
@@ -276,15 +293,17 @@ const InfiniteArena = forwardRef<ArenaHandle, ArenaProps>(function InfiniteArena
       return;
     }
 
-    // Wait until real authenticated user ID is available
-    if (!playerInfo?.id || playerInfo.id === "local") {
+    // Wait until we have a real user id (not "local") before opening channel
+    const uid = localUserRef.current.id;
+    if (!uid || uid === "local") {
+      // Retry once playerInfo resolves — the dependency on playerInfo?.id will re-run this effect
       return;
     }
 
     const localUser = {
-      id: playerInfo.id,
-      name: playerInfo.name || "Adventurer",
-      level: playerInfo.level || playerLevel || 1,
+      id: uid,
+      name: localUserRef.current.name,
+      level: localUserRef.current.level,
     };
 
     const handle = initMultiplayerRoom({
@@ -717,9 +736,10 @@ const InfiniteArena = forwardRef<ArenaHandle, ArenaProps>(function InfiniteArena
 
 
   const broadcastAction = (kind: "attack1" | "attack2" | "spin" | "flash" | "dodge") => {
-    if (!mpHandleRef.current || !playerInfo?.id || playerInfo.id === "local") return;
+    const uid = localUserRef.current.id;
+    if (!mpHandleRef.current || !uid || uid === "local") return;
     mpHandleRef.current.broadcastAction({
-      id: playerInfo.id,
+      id: uid,
       kind,
       x: posRef.current.x,
       y: posRef.current.y,
@@ -1419,7 +1439,8 @@ const InfiniteArena = forwardRef<ArenaHandle, ArenaProps>(function InfiniteArena
       const { x: px, y: py } = posRef.current;
 
       // Sync local player position with multiplayer room
-      if (mpHandleRef.current && playerInfo?.id && playerInfo.id !== "local") {
+      const mpUid = localUserRef.current.id;
+      if (mpHandleRef.current && mpUid && mpUid !== "local") {
         const isDead = hpRef.current <= 0 || playerDeathStartedAtRef.current !== null;
         const currentAction = playerActionRef.current;
         const localState: "idle" | "run" | "attack1" | "attack2" | "dead" = isDead
@@ -1431,8 +1452,8 @@ const InfiniteArena = forwardRef<ArenaHandle, ArenaProps>(function InfiniteArena
           : "idle";
 
         mpHandleRef.current.broadcastPosition({
-          id: playerInfo.id,
-          name: playerInfo.name || "Adventurer",
+          id: mpUid,
+          name: localUserRef.current.name,
           level: playerLevel,
           x: px,
           y: py,
