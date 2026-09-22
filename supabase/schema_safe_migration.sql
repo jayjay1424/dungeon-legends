@@ -273,3 +273,4 @@ END $$;
 INSERT INTO public.test (status, message)
 SELECT 'connected', 'Dungeon Legends Database is fully operational!'
 WHERE NOT EXISTS (SELECT 1 FROM public.test);
+
