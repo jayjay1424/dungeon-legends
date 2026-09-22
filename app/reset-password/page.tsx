@@ -145,7 +145,12 @@ export default function ResetPassword() {
             </div>
           </div>
 
-          <button onClick={updatePassword} disabled={loading} type="submit">
+          <button
+            className={styles.submitButton}
+            onClick={updatePassword}
+            disabled={loading}
+            type="submit"
+          >
             {loading ? "SAVING..." : "CHANGE PASSWORD"}
           </button>
         </form>
