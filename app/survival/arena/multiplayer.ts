@@ -341,3 +341,4 @@ export function cleanupRemotePlayers(
   }
   remotePlayersRef.current.clear();
 }
+
