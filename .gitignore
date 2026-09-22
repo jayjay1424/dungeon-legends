@@ -59,3 +59,7 @@ next-env.d.ts
 
 .vercel
 .env*
+
+# Local AI Agent Skills & Customizations
+.agent/
+.agents/
