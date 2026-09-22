@@ -294,3 +294,4 @@ GRANT EXECUTE ON FUNCTION public.leave_game_session(UUID) TO authenticated;
 -- ==============================================================================
 -- DONE! All game tables, real-time sync, and auth triggers are ready!
 -- ==============================================================================
+
