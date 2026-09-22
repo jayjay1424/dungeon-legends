@@ -61,22 +61,32 @@ export async function joinSession(sessionId: string) {
     .from('profiles')
     .select('username')
     .eq('id', user.id)
-    .single();
+    .maybeSingle();
 
   const { data: stats } = await supabase
     .from('player_stats')
     .select('hunter_level')
     .eq('id', user.id)
-    .single();
+    .maybeSingle();
+
+  const emailPrefix = user.email?.split('@')[0] ?? 'Adventurer';
+  const displayName =
+    profile?.username ??
+    (user.user_metadata?.username as string) ??
+    (user.user_metadata?.full_name as string) ??
+    emailPrefix;
 
   const { error } = await supabase
     .from('session_players')
-    .insert({
-      session_id: sessionId,
-      player_id: user.id,
-      display_name: profile?.username ?? 'Adventurer',
-      level: stats?.hunter_level ?? 1,
-    });
+    .upsert(
+      {
+        session_id: sessionId,
+        player_id: user.id,
+        display_name: displayName,
+        level: stats?.hunter_level ?? 1,
+      },
+      { onConflict: 'session_id,player_id' }
+    );
 
   if (error) return { error: error.message };
   return { success: true };

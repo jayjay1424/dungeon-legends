@@ -114,6 +114,13 @@ import {
   startCombatMusic,
   stopCombatMusic,
 } from "./audio";
+import {
+  initMultiplayerRoom,
+  updateRemotePlayers,
+  cleanupRemotePlayers,
+  RemotePlayerEntity,
+  MultiplayerRoomHandle,
+} from "./arena/multiplayer";
 
 export type { ArenaHandle, ArenaProps };
 
@@ -201,7 +208,7 @@ function dragonSrcFor(dir: string, companionId?: string | null): string {
 }
 
 const InfiniteArena = forwardRef<ArenaHandle, ArenaProps>(function InfiniteArena(
-    { onStatsChange, playerAttack = 10, playerCritChance = 5, playerCritDamage = 150, playerSkillPower = 10, playerMoveSpeed = 1, playerAttackSpeed = 1, playerLuck = 1, playerDefense = 5, playerArmor = 0, playerLevel = 1, playerHp, playerMaxHp, playerMana, playerMaxMana, onSkillDenied, onKill, onDistanceMoved, onSkillCast,   onStunChange, mode = "survival", onBaseHit, baseDestroyed = false, onHeraldArrived, onStoryBanner, onIntroDone, companionId = null, onExpEarned, onCombatChange, onLootCollected, onLootNearby, onTimeChange, onZoneChange, onVendorNearby, onInspectEnemy, onInspectNpc, onInspectVendor, onInspectWarrior, zoom = 1 },
+    { onStatsChange, playerAttack = 10, playerCritChance = 5, playerCritDamage = 150, playerSkillPower = 10, playerMoveSpeed = 1, playerAttackSpeed = 1, playerLuck = 1, playerDefense = 5, playerArmor = 0, playerLevel = 1, playerHp, playerMaxHp, playerMana, playerMaxMana, onSkillDenied, onKill, onDistanceMoved, onSkillCast,   onStunChange, mode = "survival", onBaseHit, baseDestroyed = false, onHeraldArrived, onStoryBanner, onIntroDone, companionId = null, onExpEarned, onCombatChange, onLootCollected, onLootNearby, onTimeChange, onZoneChange, onVendorNearby, onInspectEnemy, onInspectNpc, onInspectVendor, onInspectWarrior, zoom = 1, roomId = null, playerInfo, onPlayerCountChange },
   ref
 ) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -245,6 +252,42 @@ const InfiniteArena = forwardRef<ArenaHandle, ArenaProps>(function InfiniteArena
     inspectVendorRef.current = onInspectVendor;
     inspectWarriorRef.current = onInspectWarrior;
   });
+
+  // Multiplayer room state and sync
+  const mpHandleRef = useRef<MultiplayerRoomHandle | null>(null);
+  const remotePlayersRef = useRef<Map<string, RemotePlayerEntity>>(new Map());
+
+  useEffect(() => {
+    if (!roomId) {
+      if (mpHandleRef.current) {
+        mpHandleRef.current.leaveRoom();
+        mpHandleRef.current = null;
+      }
+      cleanupRemotePlayers(remotePlayersRef);
+      return;
+    }
+
+    const localUser = {
+      id: playerInfo?.id ?? `user-${Math.random().toString(36).substring(2, 9)}`,
+      name: playerInfo?.name ?? "Adventurer",
+      level: playerInfo?.level ?? playerLevel ?? 1,
+    };
+
+    const handle = initMultiplayerRoom({
+      roomId,
+      localUser,
+      remotePlayersRef,
+      onPlayerCountChange,
+    });
+
+    mpHandleRef.current = handle;
+
+    return () => {
+      handle.leaveRoom();
+      mpHandleRef.current = null;
+      cleanupRemotePlayers(remotePlayersRef);
+    };
+  }, [roomId, playerInfo?.id, playerInfo?.name, playerInfo?.level, playerLevel, onPlayerCountChange]);
 
   // Camera zoom: render a larger world region into a bigger canvas, then
   // shrink the whole world layer to fit the arena. All world math stays
@@ -625,9 +668,21 @@ const InfiniteArena = forwardRef<ArenaHandle, ArenaProps>(function InfiniteArena
   });
 
 
+  const broadcastAction = (kind: "attack1" | "attack2" | "spin" | "flash" | "dodge") => {
+    if (!mpHandleRef.current) return;
+    mpHandleRef.current.broadcastAction({
+      id: playerInfo?.id ?? "local",
+      kind,
+      x: posRef.current.x,
+      y: posRef.current.y,
+      dir: playerDirRef.current,
+    });
+  };
+
   const handleAttack1 = () => {
     if (!containerRef.current) return;
     if (playerDeathStartedAtRef.current !== null || isPlayerStunned()) return;
+    broadcastAction("attack1");
     doAttack1(getCombatContext(), playerActionRef);
   };
 
@@ -642,6 +697,7 @@ const InfiniteArena = forwardRef<ArenaHandle, ArenaProps>(function InfiniteArena
   const handleAttack2 = () => {
     if (!containerRef.current) return;
     if (playerDeathStartedAtRef.current !== null || isPlayerStunned()) return;
+    broadcastAction("attack2");
     doAttack2(getCombatContext(), playerActionRef);
   };
 
@@ -652,6 +708,7 @@ const InfiniteArena = forwardRef<ArenaHandle, ArenaProps>(function InfiniteArena
     if (now - lastDodgeAtRef.current < DODGE_COOLDOWN) return;
     if (!spendMana("dodge")) return;
     onSkillCastRef.current?.("dodge");
+    broadcastAction("dodge");
     const smokeEl = document.createElement("div");
     smokeEl.className = styles.secondSkill;
     worldLayerRef.current?.appendChild(smokeEl);
@@ -741,6 +798,7 @@ const InfiniteArena = forwardRef<ArenaHandle, ArenaProps>(function InfiniteArena
     if (!spendMana("spin")) return;
     lastSpinAtRef.current = performance.now();
     onSkillCastRef.current?.("spin");
+    broadcastAction("spin");
     doAttack2(getCombatContext(), playerActionRef);
     for (const enemy of skillTargets) {
       const dx = enemy.x - posRef.current.x;
@@ -783,6 +841,7 @@ const InfiniteArena = forwardRef<ArenaHandle, ArenaProps>(function InfiniteArena
       lastSyncedManaRef.current = Math.floor(manaRef.current);
       onStatsChange((s) => ({ ...s, mana: manaRef.current }));
       onSkillCastRef.current?.("flash");
+      broadcastAction("flash");
       arenaShakeUntilRef.current = performance.now() + 280;
       arenaShakeStrengthRef.current = 20;
       playWarriorThirdSkillSound();
@@ -1291,6 +1350,31 @@ const InfiniteArena = forwardRef<ArenaHandle, ArenaProps>(function InfiniteArena
 
       const { x: px, y: py } = posRef.current;
 
+      // Sync local player position with multiplayer room
+      if (mpHandleRef.current) {
+        const isDead = hpRef.current <= 0 || playerDeathStartedAtRef.current !== null;
+        const currentAction = playerActionRef.current;
+        const localState: "idle" | "run" | "attack1" | "attack2" | "dead" = isDead
+          ? "dead"
+          : currentAction
+          ? currentAction.kind === "flashTriangle" ? "attack2" : currentAction.kind
+          : moving
+          ? "run"
+          : "idle";
+
+        mpHandleRef.current.broadcastPosition({
+          id: playerInfo?.id ?? "local",
+          name: playerInfo?.name ?? "Adventurer",
+          level: playerLevel,
+          x: px,
+          y: py,
+          dir: playerDirRef.current,
+          state: localState,
+          hp: hpRef.current,
+          maxHp: maxHpRef.current,
+        });
+      }
+
       if (cameraFollowRef.current) {
         camPosRef.current.x = px;
         camPosRef.current.y = py;
@@ -1639,7 +1723,20 @@ const InfiniteArena = forwardRef<ArenaHandle, ArenaProps>(function InfiniteArena
         }
       }
 
-      // 3b. Mana regenerates over time; sync to the page only when the
+      // 3b. Remote Multiplayer Players (Teammates in the room)
+      updateRemotePlayers(
+        worldLayer,
+        remotePlayersRef,
+        now,
+        dt,
+        cx,
+        cy,
+        w,
+        h,
+        ctx
+      );
+
+      // 3c. Mana regenerates over time; sync to the page only when the
       // shown integer changes so the HUD doesn't re-render every frame.
       if (playerDeathStartedAtRef.current === null && manaRef.current < maxManaRef.current) {
         manaRef.current = Math.min(
@@ -1819,7 +1916,8 @@ const InfiniteArena = forwardRef<ArenaHandle, ArenaProps>(function InfiniteArena
         enemiesRef.current,
         npcsRef.current,
         clonesRef.current,
-        warriorsRef.current
+        warriorsRef.current,
+        Array.from(remotePlayersRef.current.values()).map((p) => ({ x: p.x, y: p.y }))
       );
 
       // 9b. Biome weather (graveyard fog, final shards, demon embers)
@@ -1897,6 +1995,11 @@ const InfiniteArena = forwardRef<ArenaHandle, ArenaProps>(function InfiniteArena
       groundDropsRef.current = [];
       lootNearbyRef.current = false;
       onLootNearby?.(false);
+      cleanupRemotePlayers(remotePlayersRef);
+      if (mpHandleRef.current) {
+        mpHandleRef.current.leaveRoom();
+        mpHandleRef.current = null;
+      }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

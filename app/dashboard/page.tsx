@@ -9,10 +9,12 @@ import styles from "./dashboard.module.css";
 import settingsStyles from "./settings.module.css";
 import DungeonBackdrop from "../components/DungeonBackdrop";
 import HeroSprite from "../components/HeroSprite";
+import Lobby from "../multiplayer/Lobby";
 
 export default function Dashboard() {
   const router = useRouter();
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [lobbyOpen, setLobbyOpen] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
   const [playerName, setPlayerName] = useState<string | null>(null);
   const [level, setLevel] = useState<number | null>(null);
@@ -21,13 +23,16 @@ export default function Dashboard() {
   const [def, setDef] = useState<string>("—");
 
   useEffect(() => {
-    if (!settingsOpen) return;
+    if (!settingsOpen && !lobbyOpen) return;
     const onKey = (event: KeyboardEvent) => {
-      if (event.key.toLowerCase() === "escape") setSettingsOpen(false);
+      if (event.key.toLowerCase() === "escape") {
+        setSettingsOpen(false);
+        setLobbyOpen(false);
+      }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [settingsOpen]);
+  }, [settingsOpen, lobbyOpen]);
 
   // Load player save on mount
   useEffect(() => {
@@ -90,6 +95,19 @@ export default function Dashboard() {
             <span className={styles.userDot} aria-hidden="true" />
             {displayName} · Lv {displayLevel}
           </span>
+          <button
+            type="button"
+            onClick={() => setLobbyOpen(true)}
+            className={styles.logoutBtn}
+            style={{
+              background: "rgba(14, 116, 144, 0.3)",
+              borderColor: "#38bdf8",
+              color: "#38bdf8",
+              cursor: "pointer",
+            }}
+          >
+            ⚔️ Co-Op
+          </button>
           <button
             type="button"
             onClick={() => setSettingsOpen(true)}
@@ -182,9 +200,54 @@ export default function Dashboard() {
                 </span>
               </span>
             </Link>
+
+            <button
+              type="button"
+              onClick={() => setLobbyOpen(true)}
+              className={`${styles.gameCard} ${styles.gameCardTextOnly}`}
+              style={{
+                textAlign: "left",
+                cursor: "pointer",
+                border: "3px solid #38bdf8",
+                background: "linear-gradient(180deg, #181425 0%, #0c2340 100%)",
+              }}
+            >
+              <span className={styles.cardBody}>
+                <span className={styles.cardTitle} style={{ color: "#38bdf8" }}>
+                  ⚔️ Multiplayer Co-Op
+                </span>
+                <span className={styles.cardDesc}>
+                  Meet and fight together in the same arena in real-time. Share battles with other players!
+                </span>
+                <span className={styles.cardEnter} style={{ color: "#7dd3fc" }}>
+                  Join or Host Room <span aria-hidden="true">→</span>
+                </span>
+              </span>
+            </button>
           </div>
         </section>
       </main>
+
+      {lobbyOpen && (
+        <div
+          className={settingsStyles.backdrop}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setLobbyOpen(false);
+          }}
+        >
+          <div style={{ width: "min(520px, 95vw)", zIndex: 110 }}>
+            <Lobby
+              mode="survival"
+              onClose={() => setLobbyOpen(false)}
+              onJoin={(sessionId) => {
+                if (sessionId) {
+                  router.push(`/survival?room=${sessionId}`);
+                }
+              }}
+            />
+          </div>
+        </div>
+      )}
 
       {settingsOpen && (
         <div

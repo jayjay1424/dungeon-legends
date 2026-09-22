@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { createClient } from "@/utils/supabase/client";
 import styles from "./survival.module.css";
 import InfiniteArena, { ArenaHandle, SKILL_MANA_COSTS } from "./InfiniteArena";
 import { startVillageMusic, stopVillageMusic } from "./audio";
@@ -326,6 +327,38 @@ export default function SurvivalPage() {
   }, []);
 
   const [stats, setStats] = useState(initialStats);
+  const [roomId, setRoomId] = useState<string | null>(null);
+  const [roomPlayerCount, setRoomPlayerCount] = useState(1);
+  const [playerInfo, setPlayerInfo] = useState<{ id: string; name: string; level: number } | null>(null);
+
+  useEffect(() => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const room = params.get("room");
+      if (room) setRoomId(room);
+    } catch {
+      // ignore
+    }
+  }, []);
+
+  useEffect(() => {
+    const supabase = createClient();
+    supabase.auth.getUser().then(({ data }) => {
+      if (data?.user) {
+        const emailPrefix = data.user.email?.split("@")[0] ?? "Adventurer";
+        const name =
+          (data.user.user_metadata?.username as string) ||
+          (data.user.user_metadata?.full_name as string) ||
+          emailPrefix;
+        setPlayerInfo({
+          id: data.user.id,
+          name,
+          level: stats.level,
+        });
+      }
+    });
+  }, [stats.level]);
+
   const [inventory, setInventory] = useState<InventoryItem[]>(initialInventory);
   const [equipment, setEquipment] = useState<EquipmentState>(initialEquipment);
   // Fresh start: no companions yet — pets are earned later, so the
@@ -921,6 +954,62 @@ export default function SurvivalPage() {
             <span className={styles.spBadge}>+{stats.skillPoints} SP</span>
           )}
           <span className={styles.timeBadge}>{worldTime.isNight ? "☾" : "☀"} {worldTime.label}</span>
+          {roomId && (
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                background: "rgba(14, 116, 144, 0.25)",
+                border: "2px solid #38bdf8",
+                padding: "3px 8px",
+                fontSize: "0.58rem",
+                color: "#38bdf8",
+                boxShadow: "0 0 10px rgba(56, 189, 248, 0.3)",
+              }}
+            >
+              <span>⚔️ ROOM: {roomId.length > 8 ? `${roomId.substring(0, 8)}...` : roomId}</span>
+              <span style={{ color: "#a5f3fc" }}>👥 {roomPlayerCount} ONLINE</span>
+              <button
+                type="button"
+                onClick={() => {
+                  navigator.clipboard.writeText(window.location.href);
+                  setLootMessage("ROOM INVITE LINK COPIED!");
+                }}
+                style={{
+                  background: "#0284c7",
+                  border: "1px solid #38bdf8",
+                  color: "#fff",
+                  padding: "2px 6px",
+                  cursor: "pointer",
+                  fontFamily: "inherit",
+                  fontSize: "0.52rem",
+                }}
+                title="Copy Invite Link to share with friends"
+              >
+                COPY LINK
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setRoomId(null);
+                  router.push("/survival");
+                }}
+                style={{
+                  background: "rgba(225, 29, 72, 0.3)",
+                  border: "1px solid #f43f5e",
+                  color: "#fda4af",
+                  padding: "2px 6px",
+                  cursor: "pointer",
+                  fontFamily: "inherit",
+                  fontSize: "0.52rem",
+                }}
+                title="Leave multiplayer room"
+              >
+                LEAVE
+              </button>
+            </div>
+          )}
           <span className={styles.hudCompactSpacer} />
           <span className={styles.hudRes}>GOLD<strong>{stats.gold.toLocaleString()}</strong></span>
           <span className={styles.hudRes}>MATS<strong>{materialCount}</strong></span>
@@ -995,6 +1084,9 @@ export default function SurvivalPage() {
           onSkillDenied={() => setLootMessage("NOT ENOUGH MANA")}
           companionId={equipment.companion?.id ?? null}
           zoom={zoom}
+          roomId={roomId}
+          playerInfo={playerInfo ?? undefined}
+          onPlayerCountChange={setRoomPlayerCount}
           onStatsChange={handleStatsChange}
           onExpEarned={(amount, enemyName) => setExpMessage(`${enemyName} DEFEATED +${amount} EXP`)}
           onCombatChange={setCombatPhase}

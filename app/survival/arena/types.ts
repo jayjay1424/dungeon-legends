@@ -133,6 +133,12 @@ export type ArenaProps = {
   onInspectVendor?: (vendor: import("./inspect").VendorId | null) => void;
   /** Camera zoom (0.5 = far, 1 = native). Canvas renders a larger region and the world layer scales to fit. */
   zoom?: number;
+  /** Multiplayer: Room / Session ID to sync with other players in real-time */
+  roomId?: string | null;
+  /** Multiplayer: Current logged-in player profile for remote identification */
+  playerInfo?: { id: string; name: string; level: number };
+  /** Multiplayer: Callback when room player count changes */
+  onPlayerCountChange?: (count: number) => void;
 };
 
 export type DamageSource = "player" | "companion" | "npc" | "enemy" | "environment";

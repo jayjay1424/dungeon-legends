@@ -20,7 +20,8 @@ export function renderMinimap(
   enemies: Enemy[],
   npcs: Npc[],
   clones: Clone[],
-  warriors: Warrior[]
+  warriors: Warrior[],
+  remotePlayers?: { x: number; y: number }[]
 ) {
   if (!canvas) return;
   const ctx = canvas.getContext("2d");
@@ -116,6 +117,23 @@ export function renderMinimap(
     const my = worldToMmY(warrior.y);
     if (mx >= 0 && mx <= mmW && my >= 0 && my <= mmH) {
       ctx.fillRect(mx - 2, my - 2, 4, 4);
+    }
+  }
+
+  // Teammates / Remote Players (Cyan with blue border)
+  if (remotePlayers) {
+    for (const rp of remotePlayers) {
+      const rx = worldToMmX(rp.x);
+      const ry = worldToMmY(rp.y);
+      if (rx >= 0 && rx <= mmW && ry >= 0 && ry <= mmH) {
+        ctx.fillStyle = "#38bdf8";
+        ctx.beginPath();
+        ctx.arc(rx, ry, 3.5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = "#0284c7";
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+      }
     }
   }
 
