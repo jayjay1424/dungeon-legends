@@ -338,6 +338,7 @@ export default function SurvivalPage() {
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [friendsOpen, setFriendsOpen] = useState(false);
   const [virtualDir, setVirtualDir] = useState<{ x: number; y: number } | null>(null);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     try {
@@ -1055,6 +1056,49 @@ export default function SurvivalPage() {
 
   return (
     <main className={styles.page}>
+      {/* ── Mobile Mini Floating Status Bar (Only visible on mobile screens) ── */}
+      <div className={styles.mobileMiniBar}>
+        <div style={{ display: "flex", alignItems: "center", gap: 6, minWidth: 0 }}>
+          <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#bef264", boxShadow: "0 0 6px #bef264", flexShrink: 0 }} />
+          <span style={{ fontSize: "0.56rem", color: "#ffcd75", fontWeight: 700, maxWidth: 80, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+            {playerInfo?.name || "HERO"}
+          </span>
+          <span style={{ fontSize: "0.5rem", background: "#0f0a1e", border: "1px solid #3a3f58", padding: "1px 4px", color: "#ffcd75", flexShrink: 0 }}>
+            LV{combinedStats.level}
+          </span>
+        </div>
+
+        {/* Mini HP/MP Bars */}
+        <div style={{ display: "flex", alignItems: "center", gap: 5, flex: 1, maxWidth: 150 }}>
+          <div style={{ flex: 1, height: 10, background: "#0f0a1e", border: "1px solid #3a3f58", position: "relative" }} title={`HP: ${Math.round(combinedStats.hp)}/${combinedStats.maxHp}`}>
+            <div style={{ width: `${lifePercent}%`, height: "100%", background: "linear-gradient(90deg, #b13434, #ef4444)" }} />
+          </div>
+          <div style={{ flex: 1, height: 10, background: "#0f0a1e", border: "1px solid #3a3f58", position: "relative" }} title={`MP: ${Math.round(combinedStats.mana)}/${combinedStats.maxMana}`}>
+            <div style={{ width: `${manaPercent}%`, height: "100%", background: "linear-gradient(90deg, #0284c7, #38bdf8)" }} />
+          </div>
+        </div>
+
+        {/* Quick Menu Toggle Button */}
+        <button
+          type="button"
+          onClick={() => setMobileMenuOpen(true)}
+          style={{
+            background: "#b13434",
+            border: "2px solid #ffcd75",
+            color: "#fff",
+            padding: "4px 8px",
+            fontFamily: "inherit",
+            fontSize: "0.55rem",
+            cursor: "pointer",
+            boxShadow: "0 2px 0 #5a1111",
+            whiteSpace: "nowrap",
+            flexShrink: 0,
+          }}
+        >
+          ☰ MENU
+        </button>
+      </div>
+
       <header className={styles.hudCompact}>
         <div className={styles.hudCompactRow}>
           <span className={styles.statusDot} />
@@ -2425,6 +2469,167 @@ export default function SurvivalPage() {
           onClose={() => setFriendsOpen(false)}
           currentRoomId={roomId}
         />
+      )}
+
+      {/* ── Mobile Slide-Down Game Menu (Opened by ☰ MENU on mobile) ── */}
+      {mobileMenuOpen && (
+        <div
+          className={styles.mobileMenuOverlay}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setMobileMenuOpen(false);
+          }}
+        >
+          <div className={styles.mobileMenuCard}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "2px solid #3a3f58", paddingBottom: 8 }}>
+              <strong style={{ color: "#ffcd75", fontSize: "0.72rem", letterSpacing: "0.1em" }}>
+                ⚔️ ADVENTURER MENU
+              </strong>
+              <button
+                type="button"
+                onClick={() => setMobileMenuOpen(false)}
+                style={{
+                  background: "#b13434",
+                  border: "2px solid #ffcd75",
+                  color: "#fff",
+                  padding: "4px 8px",
+                  fontSize: "0.58rem",
+                  fontFamily: "inherit",
+                  cursor: "pointer",
+                }}
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Quick Stats Summary */}
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "#0f0a1e", border: "1px solid #3a3f58", padding: "6px 8px", fontSize: "0.55rem" }}>
+              <span>💰 <strong style={{ color: "#ffcd75" }}>{stats.gold.toLocaleString()}</strong></span>
+              <span>🧱 <strong style={{ color: "#38bdf8" }}>{materialCount}</strong></span>
+              <span>📍 {zoneName}</span>
+            </div>
+
+            {/* Navigation Grid */}
+            <div className={styles.mobileMenuGrid}>
+              <button
+                type="button"
+                className={styles.mobileMenuBtn}
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  setBagOpen(true);
+                  setBagTab("gear");
+                }}
+              >
+                <span style={{ fontSize: "1.2rem" }}>🎒</span>
+                BAG & GEAR
+              </button>
+
+              <button
+                type="button"
+                className={styles.mobileMenuBtn}
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  setFriendsOpen(true);
+                }}
+              >
+                <span style={{ fontSize: "1.2rem" }}>👥</span>
+                FRIENDS
+              </button>
+
+              <button
+                type="button"
+                className={styles.mobileMenuBtn}
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  setBagOpen(true);
+                  setBagTab("quests");
+                }}
+              >
+                <span style={{ fontSize: "1.2rem" }}>📜</span>
+                QUESTS {questClaimableCount + dailyClaimableCount > 0 ? `(${questClaimableCount + dailyClaimableCount}!)` : ""}
+              </button>
+
+              <button
+                type="button"
+                className={styles.mobileMenuBtn}
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  setCodexOpen(true);
+                }}
+              >
+                <span style={{ fontSize: "1.2rem" }}>📖</span>
+                ITEM BOOK
+              </button>
+
+              <button
+                type="button"
+                className={styles.mobileMenuBtn}
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  setHelpOpen(true);
+                }}
+              >
+                <span style={{ fontSize: "1.2rem" }}>❓</span>
+                HOW TO PLAY
+              </button>
+
+              {/* Server / Public Server button */}
+              {!roomId ? (
+                <button
+                  type="button"
+                  className={styles.mobileMenuBtn}
+                  style={{ borderColor: "#4ade80", color: "#86efac" }}
+                  onClick={() => {
+                    const publicRoomId = "public-survival-1";
+                    setRoomId(publicRoomId);
+                    const url = new URL(window.location.href);
+                    url.searchParams.set("room", publicRoomId);
+                    window.history.replaceState({}, "", url.toString());
+                    setMobileMenuOpen(false);
+                    setLootMessage("🌍 JOINED PUBLIC SERVER!");
+                  }}
+                >
+                  <span style={{ fontSize: "1.2rem" }}>🌍</span>
+                  PUBLIC SERVER
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  className={styles.mobileMenuBtn}
+                  style={{ borderColor: "#f43f5e", color: "#fda4af" }}
+                  onClick={() => {
+                    setRoomId(null);
+                    const url = new URL(window.location.href);
+                    url.searchParams.delete("room");
+                    window.history.replaceState({}, "", url.toString());
+                    setMobileMenuOpen(false);
+                    router.push("/survival");
+                  }}
+                >
+                  <span style={{ fontSize: "1.2rem" }}>🚪</span>
+                  LEAVE ROOM
+                </button>
+              )}
+            </div>
+
+            {/* Resume button */}
+            <button
+              type="button"
+              onClick={() => setMobileMenuOpen(false)}
+              style={{
+                background: "#0284c7",
+                border: "2px solid #38bdf8",
+                color: "#fff",
+                padding: "10px",
+                fontFamily: "inherit",
+                fontSize: "0.62rem",
+                cursor: "pointer",
+                marginTop: 4,
+              }}
+            >
+              ▶ RESUME GAME
+            </button>
+          </div>
+        </div>
       )}
     </main>
   );

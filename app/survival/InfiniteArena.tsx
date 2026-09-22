@@ -266,6 +266,14 @@ const InfiniteArena = forwardRef<ArenaHandle, ArenaProps>(function InfiniteArena
   const mpHandleRef = useRef<MultiplayerRoomHandle | null>(null);
   const remotePlayersRef = useRef<Map<string, RemotePlayerEntity>>(new Map());
 
+  // Stable refs for callbacks so parent re-renders NEVER cause room teardowns
+  const onPlayerCountChangeRef = useRef(onPlayerCountChange);
+  const onChatMessageRef = useRef(onChatMessage);
+  useEffect(() => {
+    onPlayerCountChangeRef.current = onPlayerCountChange;
+    onChatMessageRef.current = onChatMessage;
+  });
+
   // Keep localUser in a ref so the room closure always reads the latest values
   // even when playerInfo resolves asynchronously after the room starts.
   const localUserRef = useRef({
@@ -294,9 +302,8 @@ const InfiniteArena = forwardRef<ArenaHandle, ArenaProps>(function InfiniteArena
     }
 
     // Wait until we have a real user id (not "local") before opening channel
-    const uid = localUserRef.current.id;
+    const uid = playerInfo?.id || localUserRef.current.id;
     if (!uid || uid === "local") {
-      // Retry once playerInfo resolves — the dependency on playerInfo?.id will re-run this effect
       return;
     }
 
@@ -310,8 +317,8 @@ const InfiniteArena = forwardRef<ArenaHandle, ArenaProps>(function InfiniteArena
       roomId,
       localUser,
       remotePlayersRef,
-      onPlayerCountChange,
-      onChatMessage,
+      onPlayerCountChange: (count) => onPlayerCountChangeRef.current?.(count),
+      onChatMessage: (msg) => onChatMessageRef.current?.(msg),
       onLocalBubble: (text: string) => {
         if (localBubbleRef.current.el) {
           localBubbleRef.current.el.remove();
@@ -354,7 +361,7 @@ const InfiniteArena = forwardRef<ArenaHandle, ArenaProps>(function InfiniteArena
         localBubbleRef.current.el = null;
       }
     };
-  }, [roomId, playerInfo?.id, playerInfo?.name, playerInfo?.level, playerLevel, onPlayerCountChange, onChatMessage]);
+  }, [roomId, playerInfo?.id]);
 
   // Camera zoom: render a larger world region into a bigger canvas, then
   // shrink the whole world layer to fit the arena. All world math stays

@@ -1727,91 +1727,136 @@
 }
 
 /* ===== MOBILE RESPONSIVE (≤820px) ===== */
+/* ===== IMMERSIVE MOBILE RESPONSIVE (≤820px) ===== */
+.mobileMiniBar {
+  display: none;
+}
+
+.mobileMenuOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 12000000;
+  background: rgba(5, 5, 8, 0.85);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  font-family: var(--font-pixel), "Press Start 2P", monospace;
+}
+
+.mobileMenuCard {
+  width: min(440px, 94vw);
+  background: rgba(24, 20, 37, 0.98);
+  border: 3px solid #ffcd75;
+  box-shadow: 0 0 0 3px #000, 0 12px 32px rgba(0, 0, 0, 0.9);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  color: #fff;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.mobileMenuGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
+.mobileMenuBtn {
+  background: #0f0a1e;
+  border: 2px solid #3a3f58;
+  color: #ffcd75;
+  padding: 12px 8px;
+  font-family: inherit;
+  font-size: 0.62rem;
+  letter-spacing: 0.08em;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  box-shadow: 0 4px 0 #000;
+}
+
+.mobileMenuBtn:active {
+  transform: translateY(2px);
+  box-shadow: 0 2px 0 #000;
+}
+
 @media (max-width: 820px) {
-  /* Compact single-row HUD on mobile */
-  .hudCompact {
-    padding: 5px 10px 5px;
+  /* Complete suppression of bottom action dock & skills on mobile */
+  .actionDock {
+    display: none !important;
   }
 
-  .hudCompactRow {
-    flex-wrap: nowrap;
-    gap: 5px;
-    overflow: hidden;
+  /* Hide desktop side floating buttons */
+  .bagToggle {
+    display: none !important;
   }
 
-  .hudCompactRow h1 {
-    font-size: 0.55rem;
-    letter-spacing: 0.1em;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 80px;
+  /* Hide radar minimap on mobile to maximize arena view */
+  .minimapContainer {
+    display: none !important;
   }
 
-  /* Hide non-essential HUD badges on mobile */
-  .hudRes,
-  .zoneBadge,
-  .spBadge {
-    display: none;
+  /* Hide desktop zoom controls on mobile */
+  .zoomGroup {
+    display: none !important;
   }
 
-  /* Shrink stat bars row */
-  .hudStats {
-    gap: 6px;
-    flex-wrap: nowrap;
-  }
-
-  .lifePanel {
-    min-width: 0;
-    flex: 1;
-  }
-
-  .lifeTrack {
-    height: 12px;
-  }
-
-  .lifeMeta {
-    font-size: 0.55rem;
-    margin-bottom: 3px;
-  }
-
-  /* Hide equipment dock and skill bar on mobile — accessible via bag button */
+  /* Hide equipment dock and skill bar on mobile */
   .equipmentBox,
   .skillDock,
   .skillHint {
     display: none !important;
   }
 
-  /* Shrink minimap on mobile */
-  .minimapCanvas {
-    width: 80px !important;
-    height: 80px !important;
+  /* Standard 2-row HUD is replaced by mobileMiniBar */
+  .hudCompact {
+    display: none !important;
   }
 
-  /* Hide resource stat panels on mobile */
-  .resourceStat {
-    display: none;
+  /* Show floating mobile mini bar */
+  .mobileMiniBar {
+    display: flex !important;
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    right: 8px;
+    z-index: 8000000;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    background: rgba(24, 20, 37, 0.94);
+    border: 2px solid #3a3f58;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.85);
+    padding: 5px 8px;
+    pointer-events: auto;
   }
 
-  /* Make action buttons in HUD smaller */
-  .hudCompactRow button {
-    padding: 3px 6px;
-    font-size: 0.5rem;
-    white-space: nowrap;
+  /* Make the game view take 100% of the viewport */
+  .page {
+    height: 100dvh;
+    min-height: 100dvh;
+    overflow: hidden;
   }
 
-  /* Zoom buttons hidden on mobile */
-  .zoomGroup {
-    display: none;
+  .mainGameArea {
+    height: 100%;
+    flex: 1 1 100%;
+    min-height: 0;
   }
 
-  /* Make the vendor/loot hint text smaller */
+  /* Make the vendor/loot hint text smaller on mobile */
   .vendorHint {
     font-size: 6px;
     bottom: 52px;
   }
 
-  /* Inspect card goes to bottom on mobile (already handled, keep this) */
+  /* Inspect card docked at bottom */
   .inspectCard {
     max-height: 44vh;
   }

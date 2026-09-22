@@ -99,7 +99,7 @@ export function initMultiplayerRoom({
   });
 
   let lastBroadcastAt = 0;
-  const BROADCAST_INTERVAL_MS = 50; // 20 Hz update rate for ultra-smooth movement
+  const BROADCAST_INTERVAL_MS = 65; // ~15 Hz update rate: smooth lerp while staying safe under Supabase Realtime limits
 
   // Keep channel alive with a heartbeat every 5s
   let heartbeatTimer: ReturnType<typeof setInterval> | null = null;
@@ -186,11 +186,14 @@ export function initMultiplayerRoom({
     })
     .on("presence", { event: "leave" }, ({ leftPresences }) => {
       if (Array.isArray(leftPresences)) {
+        const now = performance.now();
         for (const presence of leftPresences as any[]) {
           const leftId = presence?.id;
           if (leftId && remotePlayersRef.current.has(leftId)) {
             const player = remotePlayersRef.current.get(leftId);
-            if (player) {
+            // Grace period: only delete immediately if no position packet has arrived in the last 6 seconds.
+            // This prevents momentary socket reconnects or presence jitter from wiping out active players!
+            if (player && now - player.lastPacketAt > 6000) {
               player.el?.remove();
               player.hpEl?.remove();
               player.bubbleEl?.remove();

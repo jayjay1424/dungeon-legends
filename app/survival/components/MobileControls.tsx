@@ -190,7 +190,7 @@ export default function MobileControls({
         }}
         style={{
           position: "absolute",
-          top: 12,
+          top: 54,
           right: 12,
           width: 44,
           height: 44,
