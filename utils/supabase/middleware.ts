@@ -65,15 +65,15 @@ export async function updateSession(request: NextRequest) {
 
 
 
-  if (
-    !user &&
-    request.nextUrl.pathname.startsWith("/dashboard")
-  ) {
+  const protectedPaths = ["/dashboard", "/survival", "/defence", "/hunt"];
+  const isProtected = protectedPaths.some((p) =>
+    request.nextUrl.pathname.startsWith(p)
+  );
 
-    return NextResponse.redirect(
-      new URL("/login", request.url)
-    );
-
+  if (!user && isProtected) {
+    const loginUrl = new URL("/login", request.url);
+    loginUrl.searchParams.set("redirect", request.nextUrl.pathname);
+    return NextResponse.redirect(loginUrl);
   }
 
 

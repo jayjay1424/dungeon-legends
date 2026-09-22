@@ -10,11 +10,13 @@ import settingsStyles from "./settings.module.css";
 import DungeonBackdrop from "../components/DungeonBackdrop";
 import HeroSprite from "../components/HeroSprite";
 import Lobby from "../multiplayer/Lobby";
+import FriendsModal from "../components/FriendsModal";
 
 export default function Dashboard() {
   const router = useRouter();
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [lobbyOpen, setLobbyOpen] = useState(false);
+  const [friendsOpen, setFriendsOpen] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
   const [playerName, setPlayerName] = useState<string | null>(null);
   const [level, setLevel] = useState<number | null>(null);
@@ -23,28 +25,37 @@ export default function Dashboard() {
   const [def, setDef] = useState<string>("—");
 
   useEffect(() => {
-    if (!settingsOpen && !lobbyOpen) return;
+    if (!settingsOpen && !lobbyOpen && !friendsOpen) return;
     const onKey = (event: KeyboardEvent) => {
       if (event.key.toLowerCase() === "escape") {
         setSettingsOpen(false);
         setLobbyOpen(false);
+        setFriendsOpen(false);
       }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [settingsOpen, lobbyOpen]);
+  }, [settingsOpen, lobbyOpen, friendsOpen]);
 
   // Load player save on mount
   useEffect(() => {
     loadPlayerSave()
       .then((save) => {
         if (!save) return;
-        // Derive a display name from email (strip domain)
         const supabase = createClient();
-        supabase.auth.getUser().then(({ data }) => {
+        supabase.auth.getUser().then(async ({ data }) => {
           if (data?.user) {
-            const email = data.user.email ?? "";
-            setPlayerName(email.split("@")[0] ?? "Adventurer");
+            const user = data.user;
+            let username = (user.user_metadata?.username as string) || (user.user_metadata?.full_name as string);
+            if (!username) {
+              const { data: prof } = await supabase
+                .from("profiles")
+                .select("username")
+                .eq("id", user.id)
+                .maybeSingle();
+              username = prof?.username;
+            }
+            setPlayerName(username || user.email?.split("@")[0] || "Adventurer");
           }
         });
         if (save.stats) {
@@ -95,6 +106,19 @@ export default function Dashboard() {
             <span className={styles.userDot} aria-hidden="true" />
             {displayName} · Lv {displayLevel}
           </span>
+          <button
+            type="button"
+            onClick={() => setFriendsOpen(true)}
+            className={styles.logoutBtn}
+            style={{
+              background: "rgba(168, 85, 247, 0.25)",
+              borderColor: "#c084fc",
+              color: "#e9d5ff",
+              cursor: "pointer",
+            }}
+          >
+            👥 Friends
+          </button>
           <button
             type="button"
             onClick={() => setLobbyOpen(true)}
@@ -297,6 +321,10 @@ export default function Dashboard() {
             </div>
           </section>
         </div>
+      )}
+
+      {friendsOpen && (
+        <FriendsModal onClose={() => setFriendsOpen(false)} />
       )}
     </div>
   );

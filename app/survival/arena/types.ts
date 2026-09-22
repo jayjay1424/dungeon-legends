@@ -10,7 +10,12 @@ export type PlayerAction = {
 export type ArenaHandle = {
   attack: () => void;
   skill: () => void;
+  dodge?: () => void;
+  clones?: () => void;
+  spin?: () => void;
   flashTriangle: () => void;
+  setVirtualDirection?: (dir: { x: number; y: number } | null) => void;
+  sendChatMessage?: (text: string) => void;
   /** Remaining/total ms per skill for the dock countdown overlay. Attack has no cooldown. */
   getCooldowns: () => SkillCooldowns;
   /** Defence mode: spawn a base-hunting wave at the map edge ring. */
@@ -139,6 +144,10 @@ export type ArenaProps = {
   playerInfo?: { id: string; name: string; level: number };
   /** Multiplayer: Callback when room player count changes */
   onPlayerCountChange?: (count: number) => void;
+  /** Multiplayer: Callback when a chat message is received */
+  onChatMessage?: (msg: import("./multiplayer").ChatMessage) => void;
+  /** Mobile virtual joystick direction vector (-1 to 1) */
+  virtualDirection?: { x: number; y: number } | null;
 };
 
 export type DamageSource = "player" | "companion" | "npc" | "enemy" | "environment";

@@ -46,24 +46,32 @@ type SaveFallback = {
 
 // ── Load ──────────────────────────────────────────────────────────────────────
 
-export function loadItemSave(fallback: SaveFallback): SaveFallback {
-  // 1. Try server first (online mode) — non-blocking prefetch
-  if (typeof window !== "undefined") {
-    const promise = loadPlayerSave();
-    promise
-      .then((serverSave) => {
-        if (!serverSave) return;
-        applySave(serverSave);
-      })
-      .catch(() => {
-        // Server failed — fall through to localStorage
-      });
+export async function loadCloudPlayerSave(userId?: string | null): Promise<SaveData | null> {
+  try {
+    const serverSave = await loadPlayerSave();
+    if (!serverSave) return null;
+    const full: SaveData = {
+      version: SAVE_VERSION,
+      inventory: normalizeInventory(serverSave.inventory ?? []),
+      equipment: normalizeEquipment(serverSave.equipment ?? {}) as EquipmentState,
+      gold: typeof serverSave.gold === "number" ? serverSave.gold : 100,
+      stats: (serverSave.stats as SavedStats | null) ?? null,
+    };
+    if (typeof window !== "undefined" && userId) {
+      window.localStorage.setItem(`${STORAGE_KEY}-${userId}`, JSON.stringify(full));
+    }
+    return full;
+  } catch (err) {
+    console.warn("Failed to load cloud save:", err);
+    return null;
   }
+}
 
-  // 2. Fallback: localStorage (offline / first visit)
+export function loadItemSave(fallback: SaveFallback, userId?: string | null): SaveFallback & { stats?: SavedStats | null } {
   if (typeof window === "undefined") return fallback;
   try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
+    const key = userId ? `${STORAGE_KEY}-${userId}` : STORAGE_KEY;
+    const raw = window.localStorage.getItem(key) || window.localStorage.getItem(STORAGE_KEY);
     if (!raw) return fallback;
     const parsed = JSON.parse(raw) as Partial<SaveData>;
     if (parsed?.version !== SAVE_VERSION) return fallback;
@@ -71,38 +79,21 @@ export function loadItemSave(fallback: SaveFallback): SaveFallback {
       inventory: normalizeInventory(parsed.inventory ?? fallback.inventory),
       equipment: normalizeEquipment(parsed.equipment ?? fallback.equipment) as EquipmentState,
       gold: typeof parsed.gold === "number" ? parsed.gold : fallback.gold,
+      stats: parsed.stats ?? null,
     };
   } catch {
     return fallback;
   }
 }
 
-// Called when server save loads — caches in localStorage for offline use
-function applySave(serverSave: {
-  inventory: InventoryEntry[];
-  equipment: EquipmentState;
-  gold: number;
-  stats: SavedStats | null;
-}) {
-  if (typeof window === "undefined") return;
-  const full: SaveData = {
-    version: SAVE_VERSION,
-    inventory: serverSave.inventory,
-    equipment: serverSave.equipment,
-    gold: serverSave.gold,
-    stats: serverSave.stats,
-  };
-  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(full));
-}
-
 // ── Save (debounced to server + immediate to localStorage) ──────────────────
 
 let saveTimer: ReturnType<typeof setTimeout> | null = null;
 
-export function saveItemData(data: SaveFallback & { stats?: unknown }) {
+export function saveItemData(data: SaveFallback & { stats?: unknown }, userId?: string | null) {
   if (typeof window === "undefined") return;
 
-  // Always cache in localStorage immediately
+  const key = userId ? `${STORAGE_KEY}-${userId}` : STORAGE_KEY;
   const payload: SaveData = {
     version: SAVE_VERSION,
     inventory: data.inventory,
@@ -110,9 +101,9 @@ export function saveItemData(data: SaveFallback & { stats?: unknown }) {
     gold: data.gold,
     stats: (data.stats as SavedStats | undefined) ?? null,
   };
-  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+  window.localStorage.setItem(key, JSON.stringify(payload));
 
-  // Debounce server save: wait 2s after last change, then push to server
+  // Debounce server save: wait 1.8s after last change, then push to Supabase
   if (saveTimer) clearTimeout(saveTimer);
   saveTimer = setTimeout(() => {
     savePlayerSave({
@@ -120,22 +111,23 @@ export function saveItemData(data: SaveFallback & { stats?: unknown }) {
       equipment: data.equipment,
       gold: data.gold,
       stats: (data.stats as SavedStats | undefined) ?? null,
-    }).catch(() => {
-      // Server save failed — localStorage cache is still valid
+    }).catch((err) => {
+      console.warn("Cloud save sync failed:", err);
     });
-  }, 2000);
+  }, 1800);
 }
 
 // ── Reset ─────────────────────────────────────────────────────────────────────
 
-export function clearSaveData() {
+export function clearSaveData(userId?: string | null) {
   if (typeof window === "undefined") return;
 
-  // Clear localStorage
+  const key = userId ? `${STORAGE_KEY}-${userId}` : STORAGE_KEY;
+  window.localStorage.removeItem(key);
   window.localStorage.removeItem(STORAGE_KEY);
 
-  // Also wipe server side if logged in
   resetPlayerSave().catch(() => {
     // ignore
   });
 }
+

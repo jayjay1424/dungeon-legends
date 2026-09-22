@@ -13,10 +13,14 @@ import type { SkillCooldowns } from "./arena/types";
 import { addItem, removeItem, sortInventory } from "./items/inventorySystem";
 import { equipItem, EquipmentState, unequipItem } from "./items/equipmentSystem";
 import { applyConsumableStats, applyEquipmentStats } from "./items/statSystem";
-import { clearSaveData, loadItemSave, saveItemData } from "./items/persistence";
+import { clearSaveData, loadCloudPlayerSave, loadItemSave, saveItemData } from "./items/persistence";
 import { loadDiscoveredIds, saveDiscoveredIds } from "./items/codex";
 import ItemCodex from "./components/ItemCodex";
 import HowToPlay from "./components/HowToPlay";
+import InGameChat from "./components/InGameChat";
+import MobileControls from "./components/MobileControls";
+import FriendsModal from "../components/FriendsModal";
+import type { ChatMessage } from "./arena/multiplayer";
 import { BEGINNER_QUESTS, questById } from "./quests/definitions";
 import { addQuestProgress, claimQuest, loadQuestSave, saveQuestSave } from "./quests/tracker";
 import {
@@ -330,6 +334,10 @@ export default function SurvivalPage() {
   const [roomId, setRoomId] = useState<string | null>(null);
   const [roomPlayerCount, setRoomPlayerCount] = useState(1);
   const [playerInfo, setPlayerInfo] = useState<{ id: string; name: string; level: number } | null>(null);
+  const [userId, setUserId] = useState<string | null>(null);
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
+  const [friendsOpen, setFriendsOpen] = useState(false);
+  const [virtualDir, setVirtualDir] = useState<{ x: number; y: number } | null>(null);
 
   useEffect(() => {
     try {
@@ -340,24 +348,6 @@ export default function SurvivalPage() {
       // ignore
     }
   }, []);
-
-  useEffect(() => {
-    const supabase = createClient();
-    supabase.auth.getUser().then(({ data }) => {
-      if (data?.user) {
-        const emailPrefix = data.user.email?.split("@")[0] ?? "Adventurer";
-        const name =
-          (data.user.user_metadata?.username as string) ||
-          (data.user.user_metadata?.full_name as string) ||
-          emailPrefix;
-        setPlayerInfo({
-          id: data.user.id,
-          name,
-          level: stats.level,
-        });
-      }
-    });
-  }, [stats.level]);
 
   const [inventory, setInventory] = useState<InventoryItem[]>(initialInventory);
   const [equipment, setEquipment] = useState<EquipmentState>(initialEquipment);
@@ -433,24 +423,111 @@ export default function SurvivalPage() {
   const saveLoadedRef = useRef(false);
 
   useEffect(() => {
-    const saved = loadItemSave({ inventory: initialInventory, equipment: initialEquipment, gold: initialStats.gold });
-    const timer = window.setTimeout(() => {
-      setInventory(saved.inventory);
-      // Only overwrite starter gear when the save actually has something
-      // equipped — an empty {} save would otherwise wipe starting gear.
-      if (saved.equipment && Object.values(saved.equipment).some(Boolean)) {
-        setEquipment(saved.equipment as EquipmentState);
+    let cancelled = false;
+    const supabase = createClient();
+
+    async function initUserAndSave() {
+      const { data: authData } = await supabase.auth.getUser();
+      if (!authData?.user) {
+        router.push("/login?redirect=/survival");
+        return;
       }
-      if (saved.gold !== stats.gold) setStats((current) => ({ ...current, gold: saved.gold }));
+      const user = authData.user;
+      setUserId(user.id);
+
+      let username = (user.user_metadata?.username as string) || (user.user_metadata?.full_name as string);
+      if (!username) {
+        const { data: prof } = await supabase
+          .from("profiles")
+          .select("username")
+          .eq("id", user.id)
+          .maybeSingle();
+        username = prof?.username;
+      }
+      const finalName = username || user.email?.split("@")[0] || "Adventurer";
+
+      // 1. Try loading from Supabase Cloud Player Save
+      const cloudSave = await loadCloudPlayerSave(user.id);
+      if (cancelled) return;
+
+      if (cloudSave) {
+        setInventory(cloudSave.inventory);
+        if (cloudSave.equipment && Object.values(cloudSave.equipment).some(Boolean)) {
+          setEquipment(cloudSave.equipment);
+        }
+        if (typeof cloudSave.gold === "number") {
+          setStats((current) => ({ ...current, gold: cloudSave.gold }));
+        }
+        if (cloudSave.stats) {
+          setStats((current) => ({
+            ...current,
+            level: cloudSave.stats!.level ?? current.level,
+            xp: cloudSave.stats!.xp ?? current.xp,
+            xpToNext: cloudSave.stats!.xpToNext ?? current.xpToNext,
+            skillPoints: cloudSave.stats!.skillPoints ?? current.skillPoints,
+            gold: cloudSave.gold,
+            power: cloudSave.stats!.power ?? current.power,
+            speed: cloudSave.stats!.speed ?? current.speed,
+            attack: cloudSave.stats!.attack ?? current.attack,
+            defense: cloudSave.stats!.defense ?? current.defense,
+            critChance: cloudSave.stats!.critChance ?? current.critChance,
+            critDamage: cloudSave.stats!.critDamage ?? current.critDamage,
+            moveSpeed: cloudSave.stats!.moveSpeed ?? current.moveSpeed,
+            attackSpeed: cloudSave.stats!.attackSpeed ?? current.attackSpeed,
+            skillPower: cloudSave.stats!.skillPower ?? current.skillPower,
+            armor: cloudSave.stats!.armor ?? current.armor,
+            luck: cloudSave.stats!.luck ?? current.luck,
+          }));
+          setPlayerInfo({
+            id: user.id,
+            name: finalName,
+            level: cloudSave.stats.level ?? stats.level,
+          });
+        } else {
+          setPlayerInfo({
+            id: user.id,
+            name: finalName,
+            level: stats.level,
+          });
+        }
+      } else {
+        // Fallback to local storage
+        const saved = loadItemSave({ inventory: initialInventory, equipment: initialEquipment, gold: initialStats.gold }, user.id);
+        setInventory(saved.inventory);
+        if (saved.equipment && Object.values(saved.equipment).some(Boolean)) {
+          setEquipment(saved.equipment as EquipmentState);
+        }
+        if (saved.gold !== stats.gold) {
+          setStats((current) => ({ ...current, gold: saved.gold }));
+        }
+        setPlayerInfo({
+          id: user.id,
+          name: finalName,
+          level: stats.level,
+        });
+      }
+
       saveLoadedRef.current = true;
-    }, 0);
-    return () => window.clearTimeout(timer);
+    }
+
+    initUserAndSave();
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
+
+  // Synchronize playerInfo level whenever stats.level changes
+  useEffect(() => {
+    if (playerInfo && stats.level !== playerInfo.level) {
+      setPlayerInfo((prev) => (prev ? { ...prev, level: stats.level } : null));
+    }
+  }, [stats.level]);
 
   useEffect(() => {
     if (!saveLoadedRef.current) return;
-    saveItemData({ inventory, equipment, gold: stats.gold, stats });
-  }, [inventory, equipment, stats.gold, stats]);
+    saveItemData({ inventory, equipment, gold: stats.gold, stats }, userId);
+  }, [inventory, equipment, stats.gold, stats, userId]);
 
   // Item book: ever-owned discovery. Loads once, persists on change.
   useEffect(() => {
@@ -942,18 +1019,72 @@ export default function SurvivalPage() {
     return false;
   };
 
+  const handleSendChat = (text: string) => {
+    arenaRef.current?.sendChatMessage?.(text);
+    if (playerInfo) {
+      const myMsg: ChatMessage = {
+        id: `${playerInfo.id}-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+        senderId: playerInfo.id,
+        senderName: playerInfo.name,
+        text,
+        timestamp: Date.now(),
+      };
+      setChatMessages((prev) => [...prev.slice(-49), myMsg]);
+    }
+  };
+
+  const handleMobileAttack = () => {
+    arenaRef.current?.attack();
+  };
+
+  const handleMobileDodge = () => {
+    arenaRef.current?.dodge?.();
+  };
+
+  const handleMobileSpin = () => {
+    arenaRef.current?.spin?.();
+  };
+
+  const handleMobileClones = () => {
+    arenaRef.current?.clones?.();
+  };
+
+  const handleMobileFlash = () => {
+    arenaRef.current?.flashTriangle();
+  };
+
   return (
     <main className={styles.page}>
       <header className={styles.hudCompact}>
         <div className={styles.hudCompactRow}>
           <span className={styles.statusDot} />
-          <h1>ADVENTURER</h1>
+          <h1>{playerInfo?.name || "ADVENTURER"}</h1>
           <span className={styles.zoneBadge}>{zoneName}</span>
           <span className={styles.waveBadge}>LV {combinedStats.level}</span>
           {stats.skillPoints > 0 && (
             <span className={styles.spBadge}>+{stats.skillPoints} SP</span>
           )}
           <span className={styles.timeBadge}>{worldTime.isNight ? "☾" : "☀"} {worldTime.label}</span>
+          <button
+            type="button"
+            onClick={() => setFriendsOpen(true)}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 4,
+              background: "rgba(168, 85, 247, 0.25)",
+              border: "2px solid #c084fc",
+              padding: "3px 8px",
+              fontSize: "0.58rem",
+              color: "#e9d5ff",
+              cursor: "pointer",
+              fontFamily: "inherit",
+              boxShadow: "0 0 8px rgba(192, 132, 252, 0.3)",
+            }}
+            title="Open Friends List"
+          >
+            👥 FRIENDS
+          </button>
           {roomId && (
             <div
               style={{
@@ -1087,6 +1218,8 @@ export default function SurvivalPage() {
           roomId={roomId}
           playerInfo={playerInfo ?? undefined}
           onPlayerCountChange={setRoomPlayerCount}
+          onChatMessage={(msg) => setChatMessages((prev) => [...prev.slice(-49), msg])}
+          virtualDirection={virtualDir}
           onStatsChange={handleStatsChange}
           onExpEarned={(amount, enemyName) => setExpMessage(`${enemyName} DEFEATED +${amount} EXP`)}
           onCombatChange={setCombatPhase}
@@ -1254,7 +1387,7 @@ export default function SurvivalPage() {
         {bagOpen && (
           <aside className={styles.bagPanelFloating} style={{ maxWidth: 1020, width: "min(1020px, 90vw)" }}>
             <div className={styles.bagHeader}>
-              <span>ADVENTURER</span>
+              <span>{playerInfo?.name || "ADVENTURER"}</span>
               <strong>LV {combinedStats.level}</strong>
               <button type="button" className={styles.bagClose} onClick={() => setBagOpen(false)} aria-label="Close bag">✕</button>
             </div>
@@ -2220,6 +2353,31 @@ export default function SurvivalPage() {
 
         <button className={styles.exitButton} onClick={() => router.push("/dashboard")} title="Exit survival mode">EXIT</button>
       </div>
+
+      {/* Real-time In-Game Chat */}
+      <InGameChat
+        messages={chatMessages}
+        onSendMessage={handleSendChat}
+        localPlayerName={playerInfo?.name || "Hero"}
+      />
+
+      {/* Mobile Touch Controller (Auto-detected on mobile/touch screens) */}
+      <MobileControls
+        onDirectionChange={(dx, dy) => setVirtualDir({ x: dx, y: dy })}
+        onAttack={handleMobileAttack}
+        onDodge={handleMobileDodge}
+        onSpin={handleMobileSpin}
+        onClones={handleMobileClones}
+        onFlash={handleMobileFlash}
+      />
+
+      {/* Social Friends Modal */}
+      {friendsOpen && (
+        <FriendsModal
+          onClose={() => setFriendsOpen(false)}
+          currentRoomId={roomId}
+        />
+      )}
     </main>
   );
 }

@@ -36,6 +36,14 @@ export type RemotePlayerActionPacket = {
   timestamp: number;
 };
 
+export type ChatMessage = {
+  id: string;
+  senderId: string;
+  senderName: string;
+  text: string;
+  timestamp: number;
+};
+
 export type RemotePlayerEntity = {
   id: string;
   name: string;
@@ -52,11 +60,14 @@ export type RemotePlayerEntity = {
   lastPacketAt: number;
   el: HTMLDivElement | null;
   hpEl: HTMLDivElement | null;
+  bubbleEl: HTMLDivElement | null;
+  bubbleUntil: number;
 };
 
 export type MultiplayerRoomHandle = {
   broadcastPosition: (packet: Omit<RemotePlayerPacket, "timestamp">) => void;
   broadcastAction: (action: Omit<RemotePlayerActionPacket, "timestamp">) => void;
+  broadcastChat: (text: string) => void;
   leaveRoom: () => void;
   getRemotePlayers: () => RemotePlayerEntity[];
 };
@@ -67,12 +78,16 @@ export function initMultiplayerRoom({
   remotePlayersRef,
   onPlayerCountChange,
   onRemoteAction,
+  onChatMessage,
+  onLocalBubble,
 }: {
   roomId: string;
   localUser: { id: string; name: string; level: number };
   remotePlayersRef: { current: Map<string, RemotePlayerEntity> };
   onPlayerCountChange?: (count: number) => void;
   onRemoteAction?: (action: RemotePlayerActionPacket) => void;
+  onChatMessage?: (msg: ChatMessage) => void;
+  onLocalBubble?: (text: string) => void;
 }): MultiplayerRoomHandle {
   const supabase = createClient();
   const channelName = `room:${roomId}`;
@@ -84,12 +99,13 @@ export function initMultiplayerRoom({
   });
 
   let lastBroadcastAt = 0;
-  const BROADCAST_INTERVAL_MS = 55; // ~18 Hz update rate
+  const BROADCAST_INTERVAL_MS = 50; // 20 Hz update rate for ultra-smooth movement
 
   channel
     .on("broadcast", { event: "pos" }, (event) => {
       const p = event.payload as RemotePlayerPacket;
-      if (!p || p.id === localUser.id) return;
+      // Filter out invalid, generic or self packets to prevent "2 souls in 1 body" glitch
+      if (!p || !p.id || p.id === "local" || p.id === localUser.id) return;
 
       const existing = remotePlayersRef.current.get(p.id);
       if (existing) {
@@ -119,12 +135,14 @@ export function initMultiplayerRoom({
           lastPacketAt: performance.now(),
           el: null,
           hpEl: null,
+          bubbleEl: null,
+          bubbleUntil: 0,
         });
       }
     })
     .on("broadcast", { event: "action" }, (event) => {
       const act = event.payload as RemotePlayerActionPacket;
-      if (!act || act.id === localUser.id) return;
+      if (!act || !act.id || act.id === "local" || act.id === localUser.id) return;
 
       const player = remotePlayersRef.current.get(act.id);
       if (player) {
@@ -138,6 +156,16 @@ export function initMultiplayerRoom({
         }
       }
       onRemoteAction?.(act);
+    })
+    .on("broadcast", { event: "chat" }, (event) => {
+      const msg = event.payload as ChatMessage;
+      if (!msg || !msg.senderId || msg.senderId === localUser.id) return;
+
+      const player = remotePlayersRef.current.get(msg.senderId);
+      if (player) {
+        showPlayerSpeechBubble(player, msg.text);
+      }
+      onChatMessage?.(msg);
     })
     .on("presence", { event: "sync" }, () => {
       const state = channel.presenceState();
@@ -153,6 +181,7 @@ export function initMultiplayerRoom({
             if (player) {
               player.el?.remove();
               player.hpEl?.remove();
+              player.bubbleEl?.remove();
               remotePlayersRef.current.delete(leftId);
             }
           }
@@ -173,6 +202,9 @@ export function initMultiplayerRoom({
     });
 
   const broadcastPosition = (packet: Omit<RemotePlayerPacket, "timestamp">) => {
+    // Strictly disallow broadcasting without real authenticated user id
+    if (!packet.id || packet.id === "local") return;
+
     const now = performance.now();
     if (now - lastBroadcastAt < BROADCAST_INTERVAL_MS) return;
     lastBroadcastAt = now;
@@ -185,11 +217,35 @@ export function initMultiplayerRoom({
   };
 
   const broadcastAction = (action: Omit<RemotePlayerActionPacket, "timestamp">) => {
+    if (!action.id || action.id === "local") return;
+
     channel.send({
       type: "broadcast",
       event: "action",
       payload: { ...action, timestamp: performance.now() },
     });
+  };
+
+  const broadcastChat = (text: string) => {
+    const cleanText = text.trim().slice(0, 100);
+    if (!cleanText) return;
+
+    const msg: ChatMessage = {
+      id: `${localUser.id}-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+      senderId: localUser.id,
+      senderName: localUser.name,
+      text: cleanText,
+      timestamp: Date.now(),
+    };
+
+    channel.send({
+      type: "broadcast",
+      event: "chat",
+      payload: msg,
+    });
+
+    onChatMessage?.(msg);
+    onLocalBubble?.(cleanText);
   };
 
   const leaveRoom = () => {
@@ -206,9 +262,41 @@ export function initMultiplayerRoom({
   return {
     broadcastPosition,
     broadcastAction,
+    broadcastChat,
     leaveRoom,
     getRemotePlayers,
   };
+}
+
+export function showPlayerSpeechBubble(player: RemotePlayerEntity, text: string) {
+  if (player.bubbleEl) {
+    player.bubbleEl.remove();
+    player.bubbleEl = null;
+  }
+  const el = document.createElement("div");
+  el.className = "speechBubble";
+  el.textContent = text;
+  el.style.cssText = `
+    position: absolute;
+    top: 0;
+    left: 0;
+    padding: 4px 8px;
+    background: rgba(15, 10, 30, 0.95);
+    border: 2px solid #ffcd75;
+    color: #fff;
+    font-family: var(--font-pixel), "Press Start 2P", monospace;
+    font-size: 8px;
+    line-height: 1.2;
+    pointer-events: none;
+    z-index: ${Z_BASE * 2 + 100};
+    white-space: pre-wrap;
+    max-width: 140px;
+    text-align: center;
+    box-shadow: 0 4px 0 rgba(0, 0, 0, 0.65);
+    animation: popIn 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
+  `;
+  player.bubbleEl = el;
+  player.bubbleUntil = performance.now() + 4500;
 }
 
 export function updateRemotePlayers(
@@ -234,7 +322,7 @@ export function updateRemotePlayers(
     }
 
     // Smooth movement interpolation
-    const lerpFactor = Math.min(1, Math.max(0.1, dt * 0.015));
+    const lerpFactor = Math.min(1, Math.max(0.1, dt * 0.016));
     player.x += (player.targetX - player.x) * lerpFactor;
     player.y += (player.targetY - player.y) * lerpFactor;
 
@@ -306,7 +394,7 @@ export function updateRemotePlayers(
       }px, ${screenY - PLAYER_DISPLAY_H / 2}px)`;
       sprite.style.opacity = offscreen || player.state === "dead" ? "0.3" : "1";
       sprite.style.zIndex = String(Z_BASE + Math.round(player.y + 38));
-      sprite.style.filter = "drop-shadow(0 0 6px rgba(56, 189, 248, 0.45))";
+      sprite.style.filter = "drop-shadow(0 0 8px rgba(56, 189, 248, 0.55))";
     }
 
     // HP label with teammate badge & level
@@ -320,6 +408,21 @@ export function updateRemotePlayers(
       `⚔ ${player.name} (Lv.${player.level})`,
       true
     );
+
+    // Speech bubble handling
+    if (player.bubbleEl) {
+      if (now > player.bubbleUntil || offscreen) {
+        player.bubbleEl.remove();
+        player.bubbleEl = null;
+      } else {
+        if (!player.bubbleEl.parentElement) {
+          worldLayer.appendChild(player.bubbleEl);
+        }
+        player.bubbleEl.style.transform = `translate(${screenX}px, ${
+          screenY - PLAYER_DISPLAY_H / 2 - 46
+        }px) translateX(-50%)`;
+      }
+    }
   }
 
   for (const id of toDelete) {
@@ -327,6 +430,7 @@ export function updateRemotePlayers(
     if (player) {
       player.el?.remove();
       player.hpEl?.remove();
+      player.bubbleEl?.remove();
       remotePlayersRef.current.delete(id);
     }
   }
@@ -338,7 +442,7 @@ export function cleanupRemotePlayers(
   for (const player of remotePlayersRef.current.values()) {
     player.el?.remove();
     player.hpEl?.remove();
+    player.bubbleEl?.remove();
   }
   remotePlayersRef.current.clear();
 }
-

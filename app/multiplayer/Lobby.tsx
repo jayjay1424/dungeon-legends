@@ -41,8 +41,8 @@ export default function Lobby({ mode, onJoin, currentSessionId, onClose }: Lobby
     setMsg("");
     const r = await createSession(mode, maxP);
     setCreating(false);
-    if (r.error) {
-      setMsg("Failed to create room: " + r.error);
+    if (r.error || !r.sessionId) {
+      setMsg("Failed to create room: " + (r.error || "Unknown error"));
       return;
     }
     setMsg("Room created! Joining...");
@@ -253,7 +253,7 @@ export default function Lobby({ mode, onJoin, currentSessionId, onClose }: Lobby
               fontSize: "0.62rem",
             }}
           >
-            {[2, 4, 8, 12, 16].map((n) => (
+            {[2, 4, 8, 12, 16, 20].map((n) => (
               <option key={n} value={n}>
                 {n} Players
               </option>

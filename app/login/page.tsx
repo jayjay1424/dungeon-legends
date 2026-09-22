@@ -102,7 +102,9 @@ export default function LoginPage() {
       }
 
       // Hard redirect guarantees newly written auth cookies are sent to middleware
-      window.location.href = "/dashboard";
+      const redirectTarget = new URLSearchParams(window.location.search).get("redirect");
+      window.location.href =
+        redirectTarget && redirectTarget.startsWith("/") ? redirectTarget : "/dashboard";
     } catch (err: unknown) {
       const errMsg = err instanceof Error ? err.message : "An unexpected error occurred during login.";
       setMessage(errMsg);

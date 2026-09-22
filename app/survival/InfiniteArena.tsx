@@ -208,7 +208,7 @@ function dragonSrcFor(dir: string, companionId?: string | null): string {
 }
 
 const InfiniteArena = forwardRef<ArenaHandle, ArenaProps>(function InfiniteArena(
-    { onStatsChange, playerAttack = 10, playerCritChance = 5, playerCritDamage = 150, playerSkillPower = 10, playerMoveSpeed = 1, playerAttackSpeed = 1, playerLuck = 1, playerDefense = 5, playerArmor = 0, playerLevel = 1, playerHp, playerMaxHp, playerMana, playerMaxMana, onSkillDenied, onKill, onDistanceMoved, onSkillCast,   onStunChange, mode = "survival", onBaseHit, baseDestroyed = false, onHeraldArrived, onStoryBanner, onIntroDone, companionId = null, onExpEarned, onCombatChange, onLootCollected, onLootNearby, onTimeChange, onZoneChange, onVendorNearby, onInspectEnemy, onInspectNpc, onInspectVendor, onInspectWarrior, zoom = 1, roomId = null, playerInfo, onPlayerCountChange },
+    { onStatsChange, playerAttack = 10, playerCritChance = 5, playerCritDamage = 150, playerSkillPower = 10, playerMoveSpeed = 1, playerAttackSpeed = 1, playerLuck = 1, playerDefense = 5, playerArmor = 0, playerLevel = 1, playerHp, playerMaxHp, playerMana, playerMaxMana, onSkillDenied, onKill, onDistanceMoved, onSkillCast,   onStunChange, mode = "survival", onBaseHit, baseDestroyed = false, onHeraldArrived, onStoryBanner, onIntroDone, companionId = null, onExpEarned, onCombatChange, onLootCollected, onLootNearby, onTimeChange, onZoneChange, onVendorNearby, onInspectEnemy, onInspectNpc, onInspectVendor, onInspectWarrior, zoom = 1, roomId = null, playerInfo, onPlayerCountChange, onChatMessage, virtualDirection },
   ref
 ) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -240,6 +240,15 @@ const InfiniteArena = forwardRef<ArenaHandle, ArenaProps>(function InfiniteArena
 
   const [isExpanded, setIsExpanded] = useState(false);
 
+  // Virtual mobile joystick input
+  const virtualJoyRef = useRef<{ x: number; y: number } | null>(null);
+  useEffect(() => {
+    virtualJoyRef.current = virtualDirection ?? null;
+  }, [virtualDirection]);
+
+  // Local speech bubble ref
+  const localBubbleRef = useRef<{ el: HTMLDivElement | null; until: number }>({ el: null, until: 0 });
+
   // Inspect callbacks change every render (inline arrows) but the arena
   // listeners are registered once — mirror them through refs.
   const inspectEnemyRef = useRef(onInspectEnemy);
@@ -267,10 +276,15 @@ const InfiniteArena = forwardRef<ArenaHandle, ArenaProps>(function InfiniteArena
       return;
     }
 
+    // Wait until real authenticated user ID is available
+    if (!playerInfo?.id || playerInfo.id === "local") {
+      return;
+    }
+
     const localUser = {
-      id: playerInfo?.id ?? `user-${Math.random().toString(36).substring(2, 9)}`,
-      name: playerInfo?.name ?? "Adventurer",
-      level: playerInfo?.level ?? playerLevel ?? 1,
+      id: playerInfo.id,
+      name: playerInfo.name || "Adventurer",
+      level: playerInfo.level || playerLevel || 1,
     };
 
     const handle = initMultiplayerRoom({
@@ -278,6 +292,36 @@ const InfiniteArena = forwardRef<ArenaHandle, ArenaProps>(function InfiniteArena
       localUser,
       remotePlayersRef,
       onPlayerCountChange,
+      onChatMessage,
+      onLocalBubble: (text: string) => {
+        if (localBubbleRef.current.el) {
+          localBubbleRef.current.el.remove();
+        }
+        const el = document.createElement("div");
+        el.className = "speechBubble";
+        el.textContent = text;
+        el.style.cssText = `
+          position: absolute;
+          top: 0;
+          left: 0;
+          padding: 4px 8px;
+          background: rgba(15, 10, 30, 0.95);
+          border: 2px solid #a3e635;
+          color: #bef264;
+          font-family: var(--font-pixel), "Press Start 2P", monospace;
+          font-size: 8px;
+          line-height: 1.2;
+          pointer-events: none;
+          z-index: ${Z_BASE * 2 + 100};
+          white-space: pre-wrap;
+          max-width: 140px;
+          text-align: center;
+          box-shadow: 0 4px 0 rgba(0, 0, 0, 0.65);
+          animation: popIn 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
+        `;
+        worldLayerRef.current?.appendChild(el);
+        localBubbleRef.current = { el, until: performance.now() + 4500 };
+      },
     });
 
     mpHandleRef.current = handle;
@@ -286,8 +330,12 @@ const InfiniteArena = forwardRef<ArenaHandle, ArenaProps>(function InfiniteArena
       handle.leaveRoom();
       mpHandleRef.current = null;
       cleanupRemotePlayers(remotePlayersRef);
+      if (localBubbleRef.current.el) {
+        localBubbleRef.current.el.remove();
+        localBubbleRef.current.el = null;
+      }
     };
-  }, [roomId, playerInfo?.id, playerInfo?.name, playerInfo?.level, playerLevel, onPlayerCountChange]);
+  }, [roomId, playerInfo?.id, playerInfo?.name, playerInfo?.level, playerLevel, onPlayerCountChange, onChatMessage]);
 
   // Camera zoom: render a larger world region into a bigger canvas, then
   // shrink the whole world layer to fit the arena. All world math stays
@@ -669,9 +717,9 @@ const InfiniteArena = forwardRef<ArenaHandle, ArenaProps>(function InfiniteArena
 
 
   const broadcastAction = (kind: "attack1" | "attack2" | "spin" | "flash" | "dodge") => {
-    if (!mpHandleRef.current) return;
+    if (!mpHandleRef.current || !playerInfo?.id || playerInfo.id === "local") return;
     mpHandleRef.current.broadcastAction({
-      id: playerInfo?.id ?? "local",
+      id: playerInfo.id,
       kind,
       x: posRef.current.x,
       y: posRef.current.y,
@@ -1002,7 +1050,16 @@ const InfiniteArena = forwardRef<ArenaHandle, ArenaProps>(function InfiniteArena
   useImperativeHandle(ref, () => ({
     attack: handleAttack1,
     skill: handleSecondSkill,
+    dodge: handleDodge,
+    clones: handleCastClones,
+    spin: handleSecondSkill,
     flashTriangle: handleFlashTriangle,
+    setVirtualDirection: (dir: { x: number; y: number } | null) => {
+      virtualJoyRef.current = dir;
+    },
+    sendChatMessage: (text: string) => {
+      mpHandleRef.current?.broadcastChat(text);
+    },
     spawnDefenceWave,
     getHostileCount: () => enemiesRef.current.filter((e) => e.hp > 0).length,
     beginWarningRun,
@@ -1099,6 +1156,13 @@ const InfiniteArena = forwardRef<ArenaHandle, ArenaProps>(function InfiniteArena
     }
 
     const onKeyDown = (e: KeyboardEvent) => {
+      if (
+        e.target instanceof HTMLInputElement ||
+        e.target instanceof HTMLTextAreaElement ||
+        (e.target as HTMLElement)?.isContentEditable
+      ) {
+        return;
+      }
       const k = e.key.toLowerCase();
       const wasDown = keysRef.current[k];
       keysRef.current[k] = true;
@@ -1264,6 +1328,10 @@ const InfiniteArena = forwardRef<ArenaHandle, ArenaProps>(function InfiniteArena
         dx *= Math.SQRT1_2;
         dy *= Math.SQRT1_2;
       }
+      if (virtualJoyRef.current && (virtualJoyRef.current.x !== 0 || virtualJoyRef.current.y !== 0)) {
+        dx = virtualJoyRef.current.x;
+        dy = virtualJoyRef.current.y;
+      }
 
       const playerIsDead = playerDeathStartedAtRef.current !== null;
       const playerStunned = performance.now() < playerStunUntilRef.current;
@@ -1351,7 +1419,7 @@ const InfiniteArena = forwardRef<ArenaHandle, ArenaProps>(function InfiniteArena
       const { x: px, y: py } = posRef.current;
 
       // Sync local player position with multiplayer room
-      if (mpHandleRef.current) {
+      if (mpHandleRef.current && playerInfo?.id && playerInfo.id !== "local") {
         const isDead = hpRef.current <= 0 || playerDeathStartedAtRef.current !== null;
         const currentAction = playerActionRef.current;
         const localState: "idle" | "run" | "attack1" | "attack2" | "dead" = isDead
@@ -1363,8 +1431,8 @@ const InfiniteArena = forwardRef<ArenaHandle, ArenaProps>(function InfiniteArena
           : "idle";
 
         mpHandleRef.current.broadcastPosition({
-          id: playerInfo?.id ?? "local",
-          name: playerInfo?.name ?? "Adventurer",
+          id: playerInfo.id,
+          name: playerInfo.name || "Adventurer",
           level: playerLevel,
           x: px,
           y: py,
@@ -1719,7 +1787,27 @@ const InfiniteArena = forwardRef<ArenaHandle, ArenaProps>(function InfiniteArena
             maxHpRef.current > 0 ? hpRef.current / maxHpRef.current : 0;
           const fillColor =
             pct > 0.5 ? "#35b94f" : pct > 0.25 ? "#ffb52e" : "#e11d2e";
-          hpLabelEl.innerHTML = `<span class="hpTrack"><span class="hpFill" style="width:${Math.max(0, Math.min(100, pct * 100))}%;background:${fillColor}"></span></span>`;
+          const myName = playerInfo?.name || "Hero";
+          hpLabelEl.innerHTML = `
+            <span class="hpName" style="color: #bef264; text-shadow: 0 0 4px #000, 1px 1px 0 #000; font-size: 0.65rem; font-weight: bold; letter-spacing: 0.5px; display: block; text-align: center; margin-bottom: 2px;">
+              [YOU] ${myName} <span style="color: #fbbf24;">(Lv.${playerLevel})</span>
+            </span>
+            <span class="hpTrack"><span class="hpFill" style="width:${Math.max(0, Math.min(100, pct * 100))}%;background:${fillColor}"></span></span>
+          `;
+        }
+
+        // Local speech bubble positioning
+        if (localBubbleRef.current.el) {
+          if (now > localBubbleRef.current.until) {
+            localBubbleRef.current.el.remove();
+            localBubbleRef.current.el = null;
+          } else {
+            const playerScreenX = px - cx + w / 2;
+            const playerScreenY = py - cy + h / 2;
+            localBubbleRef.current.el.style.transform = `translate(${playerScreenX}px, ${
+              playerScreenY - PLAYER_DISPLAY_H / 2 - 46
+            }px) translateX(-50%)`;
+          }
         }
       }
 

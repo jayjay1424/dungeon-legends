@@ -47,7 +47,7 @@ export async function getSessionsForMode(mode: GameMode) {
     .order('created_at', { ascending: false });
 
   if (error) return { sessions: [], error };
-  return { sessions: (data || []) as GameSession[], error: null };
+  return { sessions: (data || []) as unknown as GameSession[], error: null };
 }
 
 // ── Hook: join a session ──────────────────────────────────────────────────────
@@ -100,7 +100,7 @@ export async function leaveSession(sessionId: string) {
 }
 
 // ── Hook: create a session ────────────────────────────────────────────────────
-export async function createSession(mode: GameMode, maxPlayers = 8) {
+export async function createSession(mode: GameMode, maxPlayers = 20) {
   const supabase = await getMultiplayerClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { error: 'Not authenticated' };
@@ -141,11 +141,11 @@ export function useRealtimeSessions(mode: GameMode, enabled = true) {
         event: '*',
         schema: 'public',
         table: 'session_players',
-      }, (payload) => {
+      }, async (payload) => {
         // Reload players for affected session
-        const sessionId = payload.new?.session_id ?? payload.old?.session_id;
+        const sessionId = (payload.new as any)?.session_id ?? (payload.old as any)?.session_id;
         if (sessionId) {
-          const { data } = supabase
+          const { data } = await supabase
             .from('session_players')
             .select('*')
             .eq('session_id', sessionId);
@@ -162,8 +162,8 @@ export function useRealtimeSessions(mode: GameMode, enabled = true) {
     });
 
     // Load players for existing sessions
-    sessions.forEach(session => {
-      const { data } = supabase
+    sessions.forEach(async (session) => {
+      const { data } = await supabase
         .from('session_players')
         .select('*')
         .eq('session_id', session.id);
