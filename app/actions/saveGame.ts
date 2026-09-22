@@ -47,14 +47,6 @@ export async function loadPlayerSave(): Promise<PlayerSave | null> {
 
   if (!user) return null;
 
-  // Check if account is locked due to too many failed login attempts
-  const { data: lockCheck, error: lockError } = await supabase
-    .rpc("is_account_locked", { p_email: user.email ?? "" });
-
-  if (!lockError && lockCheck === true) {
-    throw new Error("Account temporarily locked due to too many failed login attempts. Please try again later.");
-  }
-
   const { data, error } = await supabase
     .from("player_saves")
     .select("inventory, equipment, gold, stats, data_hash")

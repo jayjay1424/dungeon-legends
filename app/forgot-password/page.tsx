@@ -13,6 +13,16 @@ export default function ForgotPassword() {
   const [isSuccess, setIsSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
 
+  const [cooldown, setCooldown] = useState(0);
+
+  useEffect(() => {
+    if (cooldown <= 0) return;
+    const timer = setInterval(() => {
+      setCooldown((prev) => prev - 1);
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [cooldown]);
+
   useEffect(() => {
     const startAudio = () => startLoginMusic();
     startAudio();
@@ -25,7 +35,7 @@ export default function ForgotPassword() {
 
   async function sendReset(e?: React.FormEvent) {
     e?.preventDefault();
-    if (loading) return;
+    if (loading || cooldown > 0) return;
     setLoading(true);
     setMessage("");
     setIsSuccess(false);
@@ -39,10 +49,19 @@ export default function ForgotPassword() {
     });
 
     if (error) {
-      setMessage(error.message);
+      if (
+        error.message.toLowerCase().includes("security purposes") ||
+        error.message.toLowerCase().includes("rate limit")
+      ) {
+        setMessage("Please wait 60 seconds before requesting another reset code.");
+        setCooldown(60);
+      } else {
+        setMessage(error.message);
+      }
     } else {
       setIsSuccess(true);
-      setMessage("Check your email for the password reset link!");
+      setMessage(`Reset link sent to ${email.trim()}! Please check your inbox and spam folder.`);
+      setCooldown(60);
     }
 
     setLoading(false);
@@ -72,8 +91,8 @@ export default function ForgotPassword() {
             />
           </div>
 
-          <button onClick={sendReset} disabled={loading} type="submit">
-            {loading ? "SENDING..." : "SEND CODE"}
+          <button onClick={sendReset} disabled={loading || cooldown > 0} type="submit">
+            {loading ? "SENDING..." : cooldown > 0 ? `WAIT ${cooldown}s` : "SEND CODE"}
           </button>
         </form>
 

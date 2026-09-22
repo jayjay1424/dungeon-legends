@@ -16,6 +16,8 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
+  const [needsEmailConfirmation, setNeedsEmailConfirmation] = useState(false);
+  const [resending, setResending] = useState(false);
 
   useEffect(() => {
     const startAudio = () => startLoginMusic();
@@ -46,11 +48,37 @@ export default function LoginPage() {
     };
   }, []);
 
+  async function resendConfirmation() {
+    if (resending || !email.trim()) return;
+    setResending(true);
+    try {
+      const supabase = createClient();
+      const { error } = await supabase.auth.resend({
+        type: "signup",
+        email: email.trim(),
+        options: {
+          emailRedirectTo: `${window.location.origin}/auth/callback?next=/dashboard`,
+        },
+      });
+      if (error) {
+        setMessage(error.message);
+      } else {
+        setMessage(`Confirmation email resent to ${email.trim()}! Please check your inbox and spam folder.`);
+        setNeedsEmailConfirmation(false);
+      }
+    } catch {
+      setMessage("Failed to resend confirmation email. Please try again later.");
+    } finally {
+      setResending(false);
+    }
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (loading) return;
     setLoading(true);
     setMessage("");
+    setNeedsEmailConfirmation(false);
 
     try {
       const supabase = createClient();
@@ -61,7 +89,14 @@ export default function LoginPage() {
       });
 
       if (error) {
-        setMessage(error.message);
+        if (error.message.toLowerCase().includes("email not confirmed")) {
+          setNeedsEmailConfirmation(true);
+          setMessage("Email not confirmed yet. Click below to resend the confirmation link to your email.");
+        } else if (error.message.toLowerCase().includes("invalid login credentials")) {
+          setMessage("Incorrect passcode or hero email. Need to recover your account? Click 'Forgot?' above.");
+        } else {
+          setMessage(error.message);
+        }
         setLoading(false);
         return;
       }
@@ -152,6 +187,28 @@ export default function LoginPage() {
             <p id="login-error" role="alert" className={styles.message}>
               {message}
             </p>
+          ) : null}
+
+          {needsEmailConfirmation ? (
+            <div style={{ marginBottom: "12px", textAlign: "center" }}>
+              <button
+                type="button"
+                onClick={resendConfirmation}
+                disabled={resending}
+                style={{
+                  background: "rgba(255, 205, 117, 0.15)",
+                  color: "#ffcd75",
+                  border: "1px solid #ffcd75",
+                  borderRadius: "4px",
+                  padding: "8px 12px",
+                  fontSize: "0.75rem",
+                  cursor: resending ? "wait" : "pointer",
+                  fontFamily: "var(--font-pixel), monospace",
+                }}
+              >
+                {resending ? "SENDING LINK…" : "RESEND CONFIRMATION EMAIL"}
+              </button>
+            </div>
           ) : null}
 
           <button

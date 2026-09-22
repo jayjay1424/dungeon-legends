@@ -43,11 +43,22 @@ export default function ResetPassword() {
       };
     }
 
-    // 2. Exchange code if present directly in URL (PKCE fallback)
+    // 2. Exchange code or token_hash if present directly in URL
     const code = searchParams.get("code");
+    const token_hash = searchParams.get("token_hash");
+    const type = searchParams.get("type");
     const supabase = createClient();
 
-    if (code) {
+    if (token_hash && (type === "recovery" || type === "email")) {
+      supabase.auth
+        .verifyOtp({ token_hash, type: "recovery" })
+        .then(({ error }) => {
+          if (error) {
+            setIsInvalidToken(true);
+            setMessage("Reset link expired or invalid: " + error.message);
+          }
+        });
+    } else if (code) {
       supabase.auth.exchangeCodeForSession(code).then(({ error }) => {
         if (error) {
           setIsInvalidToken(true);
@@ -56,7 +67,16 @@ export default function ResetPassword() {
       });
     }
 
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event) => {
+      if (event === "PASSWORD_RECOVERY") {
+        setIsInvalidToken(false);
+      }
+    });
+
     return () => {
+      subscription.unsubscribe();
       window.removeEventListener("pointerdown", startAudio);
       stopLoginMusic();
     };
@@ -82,11 +102,11 @@ export default function ResetPassword() {
     }
 
     setIsSuccess(true);
-    setMessage("Password changed successfully!");
+    setMessage("Password changed successfully! Entering dungeon...");
 
     setTimeout(() => {
-      router.push("/login");
-    }, 2000);
+      window.location.href = "/dashboard";
+    }, 1500);
   }
 
   return (

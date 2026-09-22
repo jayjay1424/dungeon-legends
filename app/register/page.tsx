@@ -52,7 +52,18 @@ export default function RegisterPage() {
     });
 
     if (authError) {
-      setMessage(authError.message);
+      if (
+        authError.message.toLowerCase().includes("rate limit") ||
+        authError.message.toLowerCase().includes("over_email_send_rate_limit")
+      ) {
+        setMessage(
+          "Registration limit reached by Supabase. Please wait a few moments or try logging in."
+        );
+      } else if (authError.message.toLowerCase().includes("user already registered")) {
+        setMessage("This hero email is already registered! Please log in or reset your passcode.");
+      } else {
+        setMessage(authError.message);
+      }
       setLoading(false);
       return;
     }
@@ -69,7 +80,9 @@ export default function RegisterPage() {
     // Check if user is authenticated immediately (when email confirmation is turned off)
     if (!session) {
       setIsSuccess(true);
-      setMessage("Account created! Please check your email to confirm your hero before logging in.");
+      setMessage(
+        "Hero created! Please check your email to confirm your hero, then return here to log in."
+      );
       setLoading(false);
       return;
     }
