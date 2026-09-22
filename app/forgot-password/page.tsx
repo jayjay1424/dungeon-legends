@@ -53,14 +53,14 @@ export default function ForgotPassword() {
         error.message.toLowerCase().includes("security purposes") ||
         error.message.toLowerCase().includes("rate limit")
       ) {
-        setMessage("Please wait 60 seconds before requesting another reset code.");
+        setMessage("Please wait 60 seconds before requesting another reset email.");
         setCooldown(60);
       } else {
         setMessage(error.message);
       }
     } else {
       setIsSuccess(true);
-      setMessage(`Reset link sent to ${email.trim()}! Please check your inbox and spam folder.`);
+      setMessage(`Reset link sent to ${email.trim()}! Check your email inbox and spam folder.`);
       setCooldown(60);
     }
 
@@ -74,8 +74,8 @@ export default function ForgotPassword() {
       <div className={styles.scanlines} aria-hidden="true" />
 
       <div className={styles.card}>
-        <h1>Reset Password</h1>
-        <p>Recover hero · Return to dungeon</p>
+        <h1>Recover Passcode</h1>
+        <p>Send recovery email · Return to dungeon</p>
 
         <form onSubmit={sendReset}>
           <div className={styles.field}>
@@ -92,7 +92,7 @@ export default function ForgotPassword() {
           </div>
 
           <button onClick={sendReset} disabled={loading || cooldown > 0} type="submit">
-            {loading ? "SENDING..." : cooldown > 0 ? `WAIT ${cooldown}s` : "SEND CODE"}
+            {loading ? "SENDING EMAIL..." : cooldown > 0 ? `WAIT ${cooldown}s` : "SEND RESET EMAIL"}
           </button>
         </form>
 

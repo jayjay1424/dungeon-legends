@@ -121,18 +121,10 @@ export default function ResetPassword() {
 
         <form onSubmit={updatePassword}>
           <div className={styles.field}>
-            <label htmlFor="password">New Passcode</label>
-            <div className={styles.passwordWrap}>
-              <input
-                id="password"
-                type={showPassword ? "text" : "password"}
-                placeholder="••••••••"
-                required
-                minLength={6}
-                autoComplete="new-password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
+            <div className={styles.labelRow}>
+              <label htmlFor="password" className={styles.label}>
+                New Passcode
+              </label>
               <button
                 type="button"
                 className={styles.peekButton}
@@ -143,6 +135,17 @@ export default function ResetPassword() {
                 {showPassword ? "HIDE" : "SHOW"}
               </button>
             </div>
+            <input
+              id="password"
+              type={showPassword ? "text" : "password"}
+              placeholder="••••••••"
+              required
+              minLength={6}
+              autoComplete="new-password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className={styles.inputField}
+            />
           </div>
 
           <button
